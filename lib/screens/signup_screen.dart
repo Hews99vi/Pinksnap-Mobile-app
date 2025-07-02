@@ -18,6 +18,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthController authController = Get.find<AuthController>();
+  bool _isPasswordHidden = true;
+  bool _isConfirmPasswordHidden = true;
 
   @override
   void dispose() {
@@ -174,13 +176,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 // Password field
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _isPasswordHidden,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden = !_isPasswordHidden;
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -197,13 +209,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 // Confirm Password field
                 TextFormField(
                   controller: _confirmPasswordController,
-                  obscureText: true,
+                  obscureText: _isConfirmPasswordHidden,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordHidden ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordHidden = !_isConfirmPasswordHidden;
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {

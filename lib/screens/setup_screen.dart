@@ -16,6 +16,7 @@ class _SetupScreenState extends State<SetupScreen> {
   final _nameController = TextEditingController(text: 'Admin User');
   final _phoneController = TextEditingController(text: '+1234567890');
   bool _isLoading = false;
+  bool _isPasswordHidden = true;
 
   @override
   void dispose() {
@@ -155,11 +156,21 @@ class _SetupScreenState extends State<SetupScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Admin Password',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordHidden = !_isPasswordHidden;
+                            });
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      obscureText: _isPasswordHidden,
                     ),
                     const SizedBox(height: 12),
                     TextField(
