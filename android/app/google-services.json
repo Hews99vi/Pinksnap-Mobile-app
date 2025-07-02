@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "906549778834",
+    "project_id": "pinksnap-mobile-app",
+    "storage_bucket": "pinksnap-mobile-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906549778834:android:97845ffb3cb1121421894b",
+        "android_client_info": {
+          "package_name": "com.example.pinksmapmobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "906549778834-j2k137p17i2flr38iguj69tdcmeasru1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5TIMdBWQthSDFBYHCxj2jOpInOkHLOEo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "906549778834-j2k137p17i2flr38iguj69tdcmeasru1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import 'main_screen.dart';
 import 'admin/admin_main_screen.dart';
+import 'signup_screen.dart';
+import 'setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -170,7 +172,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 
-                // Demo credentials info
+                // Don't have account
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Don\'t have an account? '),
+                    TextButton(
+                      onPressed: () => Get.to(() => const SignupScreen()),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Color(0xFFE91E63),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Demo credentials info (for testing)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -182,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Demo Credentials:',
+                        'For Testing:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.blue.shade800,
@@ -190,12 +211,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Admin: admin@pinksnap.com / admin123',
+                        'Create an account or contact admin to get admin access',
                         style: TextStyle(color: Colors.blue.shade700),
                       ),
-                      Text(
-                        'User: user@pinksnap.com / user123',
-                        style: TextStyle(color: Colors.blue.shade700),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () => Get.to(() => const SetupScreen()),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        ),
+                        child: const Text('Setup Admin & Database'),
                       ),
                     ],
                   ),
