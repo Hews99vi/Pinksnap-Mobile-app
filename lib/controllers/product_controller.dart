@@ -1,73 +1,101 @@
 import 'package:get/get.dart';
 import '../models/product.dart';
+import '../models/cart_item.dart';
+import '../services/firebase_db_service.dart';
+import 'auth_controller.dart';
 
 class ProductController extends GetxController {
   static ProductController get instance => Get.find();
   
   final RxList<Product> _products = <Product>[].obs;
+  final RxList<CartItem> _cartItems = <CartItem>[].obs;
+  final RxList<String> _wishlistIds = <String>[].obs;
+  final RxList<String> _categories = <String>[].obs;
   final RxBool _isLoading = false.obs;
   
   List<Product> get products => _products;
+  List<CartItem> get cartItems => _cartItems;
+  List<String> get wishlistIds => _wishlistIds;
+  List<String> get categories => _categories;
   bool get isLoading => _isLoading.value;
+  
+  int get cartItemCount => _cartItems.fold(0, (sum, item) => sum + item.quantity);
+  double get cartTotal => _cartItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
   
   @override
   void onInit() {
     super.onInit();
-    _loadSampleProducts();
+    loadProducts();
+    loadCategories();
+    _initializeUserData();
   }
   
-  void _loadSampleProducts() {
-    // Add some sample products
-    _products.addAll([
-      Product(
-        id: '1',
-        name: 'Summer Dress',
-        description: 'Beautiful summer dress perfect for any occasion',
-        price: 59.99,
-        images: ['https://via.placeholder.com/300x400'],
-        category: 'Dresses',
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
-        stock: {'XS': 5, 'S': 10, 'M': 15, 'L': 8, 'XL': 3},
-        rating: 4.5,
-        reviewCount: 124,
-      ),
-      Product(
-        id: '2',
-        name: 'Elegant Blouse',
-        description: 'Sophisticated blouse for professional wear',
-        price: 45.99,
-        images: ['https://via.placeholder.com/300x400'],
-        category: 'Tops',
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
-        stock: {'XS': 3, 'S': 7, 'M': 12, 'L': 6, 'XL': 4},
-        rating: 4.2,
-        reviewCount: 89,
-      ),
-    ]);
+  void _initializeUserData() {
+    final authController = Get.find<AuthController>();
+    
+    // Listen to auth state changes to load user-specific data
+    ever(authController.currentUser.obs, (user) {
+      if (user != null) {
+        loadUserCart();
+        loadUserWishlist();
+      } else {
+        _cartItems.clear();
+        _wishlistIds.clear();
+      }
+    });
+  }
+  
+  // ==== PRODUCTS ====
+  
+  Future<void> loadProducts() async {
+    try {
+      _isLoading.value = true;
+      List<Product> loadedProducts = await FirebaseDbService.getAllProducts();
+      _products.assignAll(loadedProducts);
+    } catch (e) {
+      print('Error loading products: $e');
+      Get.snackbar('Error', 'Failed to load products');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+  
+  Future<void> loadCategories() async {
+    try {
+      List<String> loadedCategories = await FirebaseDbService.getCategories();
+      _categories.assignAll(loadedCategories);
+    } catch (e) {
+      print('Error loading categories: $e');
+    }
   }
   
   Future<bool> addProduct(Product product) async {
     try {
       _isLoading.value = true;
       
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      String productId = await FirebaseDbService.addProduct(product);
       
-      _products.add(product);
-      
-      Get.snackbar(
-        'Success',
-        'Product added successfully!',
-        snackPosition: SnackPosition.BOTTOM,
+      // Update local list with the new product ID
+      Product newProduct = Product(
+        id: productId,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        images: product.images,
+        category: product.category,
+        sizes: product.sizes,
+        stock: product.stock,
+        rating: product.rating,
+        reviewCount: product.reviewCount,
       );
       
+      _products.add(newProduct);
+      
+      Get.snackbar('Success', 'Product added successfully!');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to add product: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print('Error adding product: $e');
+      Get.snackbar('Error', 'Failed to add product');
       return false;
     } finally {
       _isLoading.value = false;
@@ -78,29 +106,18 @@ class ProductController extends GetxController {
     try {
       _isLoading.value = true;
       
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      await FirebaseDbService.updateProduct(product);
       
       final index = _products.indexWhere((p) => p.id == product.id);
       if (index != -1) {
         _products[index] = product;
-        
-        Get.snackbar(
-          'Success',
-          'Product updated successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        
-        return true;
       }
       
-      return false;
+      Get.snackbar('Success', 'Product updated successfully!');
+      return true;
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update product: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print('Error updating product: $e');
+      Get.snackbar('Error', 'Failed to update product');
       return false;
     } finally {
       _isLoading.value = false;
@@ -111,29 +128,166 @@ class ProductController extends GetxController {
     try {
       _isLoading.value = true;
       
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await FirebaseDbService.deleteProduct(productId);
       _products.removeWhere((p) => p.id == productId);
       
-      Get.snackbar(
-        'Success',
-        'Product deleted successfully!',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      
+      Get.snackbar('Success', 'Product deleted successfully!');
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete product: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print('Error deleting product: $e');
+      Get.snackbar('Error', 'Failed to delete product');
       return false;
     } finally {
       _isLoading.value = false;
     }
   }
+  
+  // ==== CART ====
+  
+  Future<void> loadUserCart() async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) return;
+    
+    try {
+      List<CartItem> cartItems = await FirebaseDbService.getUserCart(
+        authController.currentUser!.id,
+      );
+      _cartItems.assignAll(cartItems);
+    } catch (e) {
+      print('Error loading cart: $e');
+    }
+  }
+  
+  Future<void> addToCart(Product product, String size, int quantity) async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) {
+      Get.snackbar('Error', 'Please login to add items to cart');
+      return;
+    }
+    
+    try {
+      // Check if item already exists in cart
+      final existingItemIndex = _cartItems.indexWhere(
+        (item) => item.productId == product.id && item.size == size,
+      );
+      
+      if (existingItemIndex != -1) {
+        // Update quantity
+        _cartItems[existingItemIndex] = CartItem(
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          size: size,
+          quantity: _cartItems[existingItemIndex].quantity + quantity,
+          productImage: product.images.isNotEmpty ? product.images.first : '',
+        );
+      } else {
+        // Add new item
+        _cartItems.add(CartItem(
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          size: size,
+          quantity: quantity,
+          productImage: product.images.isNotEmpty ? product.images.first : '',
+        ));
+      }
+      
+      await FirebaseDbService.updateUserCart(
+        authController.currentUser!.id,
+        _cartItems,
+      );
+      
+      Get.snackbar('Success', 'Item added to cart');
+    } catch (e) {
+      print('Error adding to cart: $e');
+      Get.snackbar('Error', 'Failed to add item to cart');
+    }
+  }
+  
+  Future<void> removeFromCart(CartItem item) async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) return;
+    
+    try {
+      _cartItems.removeWhere(
+        (cartItem) => cartItem.productId == item.productId && cartItem.size == item.size,
+      );
+      
+      await FirebaseDbService.updateUserCart(
+        authController.currentUser!.id,
+        _cartItems,
+      );
+      
+      Get.snackbar('Success', 'Item removed from cart');
+    } catch (e) {
+      print('Error removing from cart: $e');
+      Get.snackbar('Error', 'Failed to remove item from cart');
+    }
+  }
+  
+  Future<void> clearCart() async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) return;
+    
+    try {
+      await FirebaseDbService.clearUserCart(authController.currentUser!.id);
+      _cartItems.clear();
+    } catch (e) {
+      print('Error clearing cart: $e');
+    }
+  }
+  
+  // ==== WISHLIST ====
+  
+  Future<void> loadUserWishlist() async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) return;
+    
+    try {
+      List<String> wishlistIds = await FirebaseDbService.getUserWishlist(
+        authController.currentUser!.id,
+      );
+      _wishlistIds.assignAll(wishlistIds);
+    } catch (e) {
+      print('Error loading wishlist: $e');
+    }
+  }
+  
+  Future<void> toggleWishlist(String productId) async {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser == null) {
+      Get.snackbar('Error', 'Please login to manage wishlist');
+      return;
+    }
+    
+    try {
+      if (_wishlistIds.contains(productId)) {
+        await FirebaseDbService.removeFromWishlist(
+          authController.currentUser!.id,
+          productId,
+        );
+        _wishlistIds.remove(productId);
+        Get.snackbar('Success', 'Item removed from wishlist');
+      } else {
+        await FirebaseDbService.addToWishlist(
+          authController.currentUser!.id,
+          productId,
+        );
+        _wishlistIds.add(productId);
+        Get.snackbar('Success', 'Item added to wishlist');
+      }
+    } catch (e) {
+      print('Error toggling wishlist: $e');
+      Get.snackbar('Error', 'Failed to update wishlist');
+    }
+  }
+  
+  bool isInWishlist(String productId) {
+    return _wishlistIds.contains(productId);
+  }
+  
+  // ==== UTILITY METHODS ====
   
   Product? getProductById(String id) {
     try {
@@ -147,7 +301,7 @@ class ProductController extends GetxController {
     return _products.where((product) => product.category == category).toList();
   }
   
-  List<String> get categories {
-    return _products.map((product) => product.category).toSet().toList();
+  List<Product> getWishlistProducts() {
+    return _products.where((product) => _wishlistIds.contains(product.id)).toList();
   }
 }

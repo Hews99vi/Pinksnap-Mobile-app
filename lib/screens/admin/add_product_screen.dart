@@ -261,7 +261,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     },
                   ),
                 );
-              }).toList(),
+              }),
             ],
 
             const SizedBox(height: 32),

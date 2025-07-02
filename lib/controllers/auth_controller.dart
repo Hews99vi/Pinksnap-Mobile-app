@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/user.dart';
+import '../services/firebase_auth_service.dart';
 
 class AuthController extends GetxController {
   static AuthController get instance => Get.find();
@@ -18,104 +20,113 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadUserFromStorage();
+    _initializeAuthListener();
   }
   
-  Future<void> _loadUserFromStorage() async {
-    try {
-      final userData = await _storage.read(key: 'user_data');
-      if (userData != null) {
-        // In a real app, you'd parse the JSON and create a User object
-        // For demo purposes, we'll create a sample user
-        _setCurrentUser(await _getSampleUser());
+  void _initializeAuthListener() {
+    // Listen to Firebase auth state changes
+    FirebaseAuthService.authStateChanges.listen((firebase_auth.User? firebaseUser) async {
+      if (firebaseUser != null) {
+        // User is signed in, get user data from Firestore
+        try {
+          User? userData = await FirebaseAuthService.getUserData(firebaseUser.uid);
+          if (userData != null) {
+            _currentUser.value = userData;
+            await _storage.write(key: 'user_data', value: userData.toJson().toString());
+          }
+        } catch (e) {
+          print('Error loading user data: $e');
+        }
+      } else {
+        // User is signed out
+        _currentUser.value = null;
+        await _storage.delete(key: 'user_data');
       }
-    } catch (e) {
-      print('Error loading user from storage: $e');
-    }
-  }
-  
-  Future<User> _getSampleUser() async {
-    // For demo purposes, create a sample admin user
-    // In a real app, this would come from your backend
-    return User(
-      id: '1',
-      name: 'Admin User',
-      email: 'admin@pinksnap.com',
-      phoneNumber: '+1234567890',
-      role: UserRole.admin,
-    );
+    });
   }
   
   Future<bool> login(String email, String password) async {
     try {
       _isLoading.value = true;
       
-      // Simulate login process
-      await Future.delayed(const Duration(seconds: 2));
+      User? user = await FirebaseAuthService.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       
-      // Demo admin credentials
-      if (email == 'admin@pinksnap.com' && password == 'admin123') {
-        final adminUser = User(
-          id: '1',
-          name: 'Admin User',
-          email: email,
-          phoneNumber: '+1234567890',
-          role: UserRole.admin,
-        );
-        await _setCurrentUser(adminUser);
+      if (user != null) {
+        _currentUser.value = user;
         return true;
       }
-      
-      // Demo regular user credentials
-      if (email == 'user@pinksnap.com' && password == 'user123') {
-        final regularUser = User(
-          id: '2',
-          name: 'Regular User',
-          email: email,
-          phoneNumber: '+0987654321',
-          role: UserRole.customer,
-        );
-        await _setCurrentUser(regularUser);
-        return true;
-      }
-      
       return false;
     } catch (e) {
       print('Login error: $e');
+      Get.snackbar('Login Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {
       _isLoading.value = false;
     }
   }
   
-  Future<void> _setCurrentUser(User user) async {
-    _currentUser.value = user;
-    await _storage.write(key: 'user_data', value: user.toJson().toString());
-  }
-  
-  Future<void> logout() async {
-    _currentUser.value = null;
-    await _storage.delete(key: 'user_data');
-  }
-  
-  Future<bool> register(String name, String email, String password, {UserRole role = UserRole.customer}) async {
+  Future<bool> register(String name, String email, String password, {UserRole role = UserRole.customer, String? phoneNumber}) async {
     try {
       _isLoading.value = true;
       
-      // Simulate registration process
-      await Future.delayed(const Duration(seconds: 2));
-      
-      final newUser = User(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
+      User? user = await FirebaseAuthService.signUpWithEmailAndPassword(
         email: email,
-        role: role,
+        password: password,
+        name: name,
+        phoneNumber: phoneNumber,
       );
       
-      await _setCurrentUser(newUser);
-      return true;
+      if (user != null) {
+        _currentUser.value = user;
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Registration error: $e');
+      Get.snackbar('Registration Error', e.toString().replaceAll('Exception: ', ''));
+      return false;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+  
+  Future<void> logout() async {
+    try {
+      await FirebaseAuthService.signOut();
+      _currentUser.value = null;
+    } catch (e) {
+      print('Logout error: $e');
+      Get.snackbar('Logout Error', e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+  
+  Future<bool> resetPassword(String email) async {
+    try {
+      await FirebaseAuthService.resetPassword(email);
+      Get.snackbar('Success', 'Password reset email sent to $email');
+      return true;
+    } catch (e) {
+      print('Reset password error: $e');
+      Get.snackbar('Reset Password Error', e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+  
+  Future<bool> updateProfile(User updatedUser) async {
+    try {
+      _isLoading.value = true;
+      
+      await FirebaseAuthService.updateUserData(updatedUser);
+      _currentUser.value = updatedUser;
+      
+      Get.snackbar('Success', 'Profile updated successfully');
+      return true;
+    } catch (e) {
+      print('Update profile error: $e');
+      Get.snackbar('Update Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {
       _isLoading.value = false;
