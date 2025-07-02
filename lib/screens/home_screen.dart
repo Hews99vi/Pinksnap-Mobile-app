@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
 import '../models/product.dart';
 import '../widgets/product_card.dart';
 import '../widgets/hero_carousel.dart';
 import '../widgets/best_selling_section.dart';
 import '../widgets/designer_categories_section.dart';
 import '../widgets/logo.dart' as app_logo;
+import '../controllers/product_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,23 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   int _selectedCategoryIndex = 0;
+  final ProductController productController = Get.find();
 
-  // Temporary mock data - replace with actual API calls later
-  final List<Product> mockProducts = [
-    Product(
-      id: '1',
-      name: 'Floral Summer Dress',
-      description: 'Beautiful floral dress perfect for summer',
-      price: 59.99,
-      images: ['assets/images/placeholder.png'],
-      category: 'Dresses',
-      sizes: ['S', 'M', 'L'],
-      stock: {'S': 5, 'M': 3, 'L': 2},
-      rating: 4.5,
-      reviewCount: 128,
-    ),
-    // Add more mock products here
-  ];
+  List<Product> get filteredProducts {
+    if (_selectedCategoryIndex == 0) {
+      return productController.products;
+    }
+    final selectedCategory = categories[_selectedCategoryIndex];
+    return productController.products
+        .where((product) => product.category == selectedCategory)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,20 +138,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: SliverMasonryGrid.count(
+            sliver: Obx(() => SliverMasonryGrid.count(
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childCount: mockProducts.length,
+              childCount: filteredProducts.length,
               itemBuilder: (context, index) {
                 return ProductCard(
-                  product: mockProducts[index],
+                  product: filteredProducts[index],
                   onTap: () {
                     // TODO: Navigate to product details
                   },
                 );
               },
-            ),
+            )),
           ),
           const SliverToBoxAdapter(
             child: Padding(

@@ -1,9 +1,15 @@
+enum UserRole {
+  customer,
+  admin,
+}
+
 class User {
   final String id;
   final String name;
   final String email;
   final String? phoneNumber;
   final List<Address> addresses;
+  final UserRole role;
 
   User({
     required this.id,
@@ -11,6 +17,7 @@ class User {
     required this.email,
     this.phoneNumber,
     this.addresses = const [],
+    this.role = UserRole.customer,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +30,10 @@ class User {
           ?.map((e) => Address.fromJson(e as Map<String, dynamic>))
           .toList() ??
           [],
+      role: UserRole.values.firstWhere(
+        (e) => e.toString() == 'UserRole.${json['role'] ?? 'customer'}',
+        orElse: () => UserRole.customer,
+      ),
     );
   }
 
@@ -33,6 +44,7 @@ class User {
       'email': email,
       'phoneNumber': phoneNumber,
       'addresses': addresses.map((e) => e.toJson()).toList(),
+      'role': role.toString().split('.').last,
     };
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/auth_controller.dart';
 import 'home_screen.dart';
 import 'categories_screen.dart';
 import 'wishlist_screen.dart';
 import 'profile_screen.dart';
+import 'login_screen.dart';
 
 class MainScreen extends StatelessWidget {
   MainScreen({super.key});

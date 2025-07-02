@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pinksmapmobile/utils/theme.dart';
-import 'screens/main_screen.dart';
+import 'screens/login_screen.dart';
+import 'controllers/auth_controller.dart';
+import 'controllers/product_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize controllers
+  Get.put(AuthController());
+  Get.put(ProductController());
+  
   runApp(const PinkSnapApp());
 }
 
@@ -16,7 +23,7 @@ class PinkSnapApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'PinkSnap',
       theme: AppTheme.lightTheme,
-      home: MainScreen(),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
