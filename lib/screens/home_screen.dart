@@ -6,7 +6,6 @@ import '../widgets/product_card.dart';
 import '../widgets/hero_carousel.dart';
 import '../widgets/best_selling_section.dart';
 import '../widgets/designer_categories_section.dart';
-import '../widgets/logo.dart' as app_logo;
 import '../controllers/product_controller.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,35 +47,138 @@ class _HomeScreenState extends State<HomeScreen> {
             floating: true,
             backgroundColor: Colors.white,
             elevation: 0,
+            shadowColor: Colors.grey.withOpacity(0.1),
+            surfaceTintColor: Colors.transparent,
+            titleSpacing: 20,
             title: Row(
               children: [
-                SizedBox(
-                  height: 32,
-                  width: 100,
-                  child: app_logo.logo,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'PinkSnap',
-                  style: TextStyle(
-                    color: Colors.pink[900],
-                    fontWeight: FontWeight.bold,
+                Container(
+                  height: 36,
+                  width: 36,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.pink[400]!, Colors.pink[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.pink[200]!.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
+                  child: Center(
+                    child: Text(
+                      'PS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'PinkSnap',
+                      style: TextStyle(
+                        color: Colors.grey[800],
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'Fashion Collection',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             actions: [
-              IconButton(
-                icon: Icon(Icons.search, color: Colors.pink[900]),
-                onPressed: () {
-                  // TODO: Implement search
-                },
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!, width: 1),
+                    ),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                  onPressed: () {
+                    // TODO: Implement search
+                  },
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.shopping_cart, color: Colors.pink[900]),
-                onPressed: () {
-                  // TODO: Implement cart
-                },
+              Container(
+                margin: const EdgeInsets.only(right: 16),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!, width: 1),
+                    ),
+                    child: Stack(
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.pink[400],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 12,
+                              minHeight: 12,
+                            ),
+                            child: Text(
+                              '2',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  onPressed: () {
+                    // TODO: Implement cart
+                  },
+                ),
               ),
             ],
           ),

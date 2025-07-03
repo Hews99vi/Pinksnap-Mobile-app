@@ -16,17 +16,17 @@ class _HeroCarouselState extends State<HeroCarousel> {
     {
       'title': 'Discover and\nFind Your Own\nFashion',
       'subtitle': 'Design your perfect fit',
-      'image': 'assets/images/placeholder.png',
+      'image': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=720&h=450&fit=crop',
     },
     {
       'title': 'Exclusive\nFashion\nCollection',
       'subtitle': 'Shop the latest trends',
-      'image': 'assets/images/placeholder.png',
+      'image': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=720&h=450&fit=crop',
     },
     {
       'title': 'New Summer\nCollection\n2025',
       'subtitle': 'Get ready for summer',
-      'image': 'assets/images/placeholder.png',
+      'image': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=720&h=450&fit=crop',
     },
   ];
 
@@ -85,9 +85,33 @@ class _HeroCarouselState extends State<HeroCarousel> {
                           borderRadius: const BorderRadius.horizontal(
                             right: Radius.circular(16),
                           ),
-                          child: Image.asset(
+                          child: Image.network(
                             slide['image']!,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.grey[600],
+                                  size: 50,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
