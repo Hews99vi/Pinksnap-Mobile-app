@@ -119,8 +119,8 @@ class _HeroCarouselState extends State<HeroCarousel> {
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                             colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.black.withOpacity(0.4),
+                              Colors.black.withValues(alpha: 0.7),
+                              Colors.black.withValues(alpha: 0.4),
                               Colors.transparent,
                             ],
                             stops: const [0.0, 0.4, 1.0],
@@ -143,11 +143,11 @@ class _HeroCarouselState extends State<HeroCarousel> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.95),
+                                color: Colors.white.withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -173,7 +173,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.pink[50]!.withOpacity(0.95),
+                                color: Colors.pink[50]!.withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: Colors.pink[200]!,

@@ -8,7 +8,7 @@ class ProfessionalHeader extends StatelessWidget implements PreferredSizeWidget 
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      shadowColor: Colors.grey.withOpacity(0.1),
+      shadowColor: Colors.grey.withValues(alpha: 0.1),
       surfaceTintColor: Colors.transparent,
       titleSpacing: 20,
       title: Row(
@@ -25,7 +25,7 @@ class ProfessionalHeader extends StatelessWidget implements PreferredSizeWidget 
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.pink[200]!.withOpacity(0.3),
+                  color: Colors.pink[200]!.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user.dart' as app_user;
 
 class AdminUserService {
@@ -15,7 +16,7 @@ class AdminUserService {
     String? phoneNumber,
   }) async {
     try {
-      print('Creating admin user...');
+      debugPrint('Creating admin user...');
       
       // Create user with Firebase Auth
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -38,13 +39,13 @@ class AdminUserService {
             .doc(userCredential.user!.uid)
             .set(adminUser.toJson());
 
-        print('Admin user created successfully!');
-        print('Email: $email');
-        print('Password: $password');
-        print('Role: admin');
+        debugPrint('Admin user created successfully!');
+        debugPrint('Email: $email');
+        debugPrint('Password: $password');
+        debugPrint('Role: admin');
       }
     } catch (e) {
-      print('Error creating admin user: $e');
+      debugPrint('Error creating admin user: $e');
       throw Exception('Failed to create admin user: $e');
     }
   }
@@ -57,9 +58,9 @@ class AdminUserService {
           .doc(userId)
           .update({'role': 'admin'});
       
-      print('User $userId promoted to admin successfully!');
+      debugPrint('User $userId promoted to admin successfully!');
     } catch (e) {
-      print('Error promoting user to admin: $e');
+      debugPrint('Error promoting user to admin: $e');
       throw Exception('Failed to promote user to admin: $e');
     }
   }
@@ -72,9 +73,9 @@ class AdminUserService {
           .doc(userId)
           .update({'role': 'customer'});
       
-      print('Admin $userId demoted to user successfully!');
+      debugPrint('Admin $userId demoted to user successfully!');
     } catch (e) {
-      print('Error demoting admin to user: $e');
+      debugPrint('Error demoting admin to user: $e');
       throw Exception('Failed to demote admin to user: $e');
     }
   }
@@ -91,7 +92,7 @@ class AdminUserService {
           .map((doc) => app_user.User.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error getting admin users: $e');
+      debugPrint('Error getting admin users: $e');
       throw Exception('Failed to get admin users: $e');
     }
   }
@@ -107,7 +108,7 @@ class AdminUserService {
 
       return snapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking for admin users: $e');
+      debugPrint('Error checking for admin users: $e');
       return false;
     }
   }

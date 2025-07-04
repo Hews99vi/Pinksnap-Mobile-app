@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/user.dart';
@@ -35,7 +36,7 @@ class AuthController extends GetxController {
             await _storage.write(key: 'user_data', value: userData.toJson().toString());
           }
         } catch (e) {
-          print('Error loading user data: $e');
+          debugPrint('Error loading user data: $e');
         }
       } else {
         // User is signed out
@@ -60,7 +61,7 @@ class AuthController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Login error: $e');
+      debugPrint('Login error: $e');
       Get.snackbar('Login Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {
@@ -85,7 +86,7 @@ class AuthController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Registration error: $e');
+      debugPrint('Registration error: $e');
       Get.snackbar('Registration Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {
@@ -98,7 +99,7 @@ class AuthController extends GetxController {
       await FirebaseAuthService.signOut();
       _currentUser.value = null;
     } catch (e) {
-      print('Logout error: $e');
+      debugPrint('Logout error: $e');
       Get.snackbar('Logout Error', e.toString().replaceAll('Exception: ', ''));
     }
   }
@@ -109,7 +110,7 @@ class AuthController extends GetxController {
       Get.snackbar('Success', 'Password reset email sent to $email');
       return true;
     } catch (e) {
-      print('Reset password error: $e');
+      debugPrint('Reset password error: $e');
       Get.snackbar('Reset Password Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     }
@@ -125,7 +126,7 @@ class AuthController extends GetxController {
       Get.snackbar('Success', 'Profile updated successfully');
       return true;
     } catch (e) {
-      print('Update profile error: $e');
+      debugPrint('Update profile error: $e');
       Get.snackbar('Update Error', e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {

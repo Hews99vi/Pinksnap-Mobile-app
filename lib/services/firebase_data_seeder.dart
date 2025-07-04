@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 
 class FirebaseDataSeeder {
@@ -8,20 +9,20 @@ class FirebaseDataSeeder {
   /// Call this method once to populate your Firestore database
   static Future<void> seedDatabase() async {
     try {
-      print('Starting database seeding...');
+      debugPrint('Starting database seeding...');
       
       await _seedCategories();
       await _seedProducts();
       
-      print('Database seeding completed successfully!');
+      debugPrint('Database seeding completed successfully!');
     } catch (e) {
-      print('Error seeding database: $e');
+      debugPrint('Error seeding database: $e');
       throw Exception('Failed to seed database: $e');
     }
   }
 
   static Future<void> _seedCategories() async {
-    print('Seeding categories...');
+    debugPrint('Seeding categories...');
     
     final categories = [
       'Dresses',
@@ -41,11 +42,11 @@ class FirebaseDataSeeder {
       });
     }
     
-    print('Categories seeded successfully!');
+    debugPrint('Categories seeded successfully!');
   }
 
   static Future<void> _seedProducts() async {
-    print('Seeding products...');
+    debugPrint('Seeding products...');
     
     final sampleProducts = [
       // Dresses
@@ -190,25 +191,25 @@ class FirebaseDataSeeder {
       await _firestore.collection('products').add(product.toJson());
     }
     
-    print('Products seeded successfully!');
+    debugPrint('Products seeded successfully!');
   }
 
   /// Creates an admin user (call this method to create an admin account)
   static Future<void> createAdminUser(String email, String password, String name) async {
     try {
-      print('Creating admin user...');
+      debugPrint('Creating admin user...');
       
       // Note: You'll need to create the admin user through Firebase Auth first
       // Then call this method to update their role in Firestore
       
       // This is just a placeholder - you should implement proper admin creation
-      print('Admin user creation process started for: $email');
-      print('Remember to:');
-      print('1. Create the user account through Firebase Auth');
-      print('2. Update the user document in Firestore with role: "admin"');
+      debugPrint('Admin user creation process started for: $email');
+      debugPrint('Remember to:');
+      debugPrint('1. Create the user account through Firebase Auth');
+      debugPrint('2. Update the user document in Firestore with role: "admin"');
       
     } catch (e) {
-      print('Error creating admin user: $e');
+      debugPrint('Error creating admin user: $e');
       throw Exception('Failed to create admin user: $e');
     }
   }

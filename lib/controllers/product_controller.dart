@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../services/firebase_db_service.dart';
@@ -53,7 +54,7 @@ class ProductController extends GetxController {
       List<Product> loadedProducts = await FirebaseDbService.getAllProducts();
       _products.assignAll(loadedProducts);
     } catch (e) {
-      print('Error loading products: $e');
+      debugPrint('Error loading products: $e');
       Get.snackbar('Error', 'Failed to load products');
     } finally {
       _isLoading.value = false;
@@ -65,7 +66,7 @@ class ProductController extends GetxController {
       List<String> loadedCategories = await FirebaseDbService.getCategories();
       _categories.assignAll(loadedCategories);
     } catch (e) {
-      print('Error loading categories: $e');
+      debugPrint('Error loading categories: $e');
     }
   }
   
@@ -94,7 +95,7 @@ class ProductController extends GetxController {
       Get.snackbar('Success', 'Product added successfully!');
       return true;
     } catch (e) {
-      print('Error adding product: $e');
+      debugPrint('Error adding product: $e');
       Get.snackbar('Error', 'Failed to add product');
       return false;
     } finally {
@@ -116,7 +117,7 @@ class ProductController extends GetxController {
       Get.snackbar('Success', 'Product updated successfully!');
       return true;
     } catch (e) {
-      print('Error updating product: $e');
+      debugPrint('Error updating product: $e');
       Get.snackbar('Error', 'Failed to update product');
       return false;
     } finally {
@@ -134,7 +135,7 @@ class ProductController extends GetxController {
       Get.snackbar('Success', 'Product deleted successfully!');
       return true;
     } catch (e) {
-      print('Error deleting product: $e');
+      debugPrint('Error deleting product: $e');
       Get.snackbar('Error', 'Failed to delete product');
       return false;
     } finally {
@@ -154,7 +155,7 @@ class ProductController extends GetxController {
       );
       _cartItems.assignAll(cartItems);
     } catch (e) {
-      print('Error loading cart: $e');
+      debugPrint('Error loading cart: $e');
     }
   }
   
@@ -200,7 +201,7 @@ class ProductController extends GetxController {
       
       Get.snackbar('Success', 'Item added to cart');
     } catch (e) {
-      print('Error adding to cart: $e');
+      debugPrint('Error adding to cart: $e');
       Get.snackbar('Error', 'Failed to add item to cart');
     }
   }
@@ -221,7 +222,7 @@ class ProductController extends GetxController {
       
       Get.snackbar('Success', 'Item removed from cart');
     } catch (e) {
-      print('Error removing from cart: $e');
+      debugPrint('Error removing from cart: $e');
       Get.snackbar('Error', 'Failed to remove item from cart');
     }
   }
@@ -234,7 +235,7 @@ class ProductController extends GetxController {
       await FirebaseDbService.clearUserCart(authController.currentUser!.id);
       _cartItems.clear();
     } catch (e) {
-      print('Error clearing cart: $e');
+      debugPrint('Error clearing cart: $e');
     }
   }
   
@@ -250,7 +251,7 @@ class ProductController extends GetxController {
       );
       _wishlistIds.assignAll(wishlistIds);
     } catch (e) {
-      print('Error loading wishlist: $e');
+      debugPrint('Error loading wishlist: $e');
     }
   }
   
@@ -278,7 +279,7 @@ class ProductController extends GetxController {
         Get.snackbar('Success', 'Item added to wishlist');
       }
     } catch (e) {
-      print('Error toggling wishlist: $e');
+      debugPrint('Error toggling wishlist: $e');
       Get.snackbar('Error', 'Failed to update wishlist');
     }
   }
