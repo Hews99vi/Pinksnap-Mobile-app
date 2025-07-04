@@ -7,6 +7,9 @@ import '../widgets/hero_carousel.dart';
 import '../widgets/best_selling_section.dart';
 import '../widgets/designer_categories_section.dart';
 import '../controllers/product_controller.dart';
+import '../controllers/cart_controller.dart';
+import 'product_details_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _selectedCategoryIndex = 0;
   final ProductController productController = Get.find();
+  final CartController cartController = Get.put(CartController());
 
   List<Product> get filteredProducts {
     if (_selectedCategoryIndex == 0) {
@@ -148,35 +152,40 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.grey[600],
                           size: 20,
                         ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.pink[400],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 12,
-                              minHeight: 12,
-                            ),
-                            child: Text(
-                              '2',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
+                        Obx(() {
+                          final itemCount = cartController.itemCount;
+                          if (itemCount == 0) return const SizedBox.shrink();
+                          
+                          return Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.pink[400],
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                              textAlign: TextAlign.center,
+                              constraints: const BoxConstraints(
+                                minWidth: 12,
+                                minHeight: 12,
+                              ),
+                              child: Text(
+                                itemCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                       ],
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement cart
+                    Get.to(() => const CartScreen());
                   },
                 ),
               ),
@@ -249,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ProductCard(
                   product: filteredProducts[index],
                   onTap: () {
-                    // TODO: Navigate to product details
+                    Get.to(() => ProductDetailsScreen(product: filteredProducts[index]));
                   },
                 );
               },

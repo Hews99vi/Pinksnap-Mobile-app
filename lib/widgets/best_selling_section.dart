@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/product.dart';
 import '../widgets/product_card.dart';
+import '../screens/product_details_screen.dart';
 
 class BestSellingSection extends StatelessWidget {
   const BestSellingSection({super.key});
@@ -86,7 +88,7 @@ class BestSellingSection extends StatelessWidget {
                   child: ProductCard(
                     product: bestSellers[index],
                     onTap: () {
-                      // TODO: Navigate to product details
+                      Get.to(() => ProductDetailsScreen(product: bestSellers[index]));
                     },
                   ),
                 ),
