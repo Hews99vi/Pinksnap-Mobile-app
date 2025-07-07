@@ -120,7 +120,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.85, // Increased further to 0.85 for more height
         ),
         itemCount: products.length,
         itemBuilder: (context, index) {
@@ -235,42 +235,46 @@ class _WishlistScreenState extends State<WishlistScreen> {
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8), // Reduced from 12 to 8
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       product.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 13, // Reduced from 14 to 13
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2), // Reduced from 4 to 2
                     if (product.rating > 0) ...[
                       Row(
                         children: [
-                          const Icon(Icons.star, color: Colors.orange, size: 14),
+                          const Icon(Icons.star, color: Colors.orange, size: 12), // Reduced from 14 to 12
                           const SizedBox(width: 2),
-                          Text(
-                            '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                          Flexible(
+                            child: Text(
+                              '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 11, // Reduced from 12 to 11
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2), // Reduced from 4 to 2
                     ],
                     const Spacer(),
                     Text(
                       '\$${product.price.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 15, // Reduced from 16 to 15
                         color: Color(0xFFE91E63),
                       ),
                     ),
