@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import 'admin_products_screen.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_orders_screen.dart';
 import '../login_screen.dart';
 
 class AdminMainScreen extends StatelessWidget {
@@ -16,6 +17,7 @@ class AdminMainScreen extends StatelessWidget {
     final List<Widget> screens = [
       const AdminDashboardScreen(),
       const AdminProductsScreen(),
+      const AdminOrdersScreen(),
     ];
 
     return Scaffold(
@@ -48,6 +50,10 @@ class AdminMainScreen extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.inventory),
               label: 'Products',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: 'Orders',
             ),
           ],
           onTap: (index) => currentIndex.value = index,

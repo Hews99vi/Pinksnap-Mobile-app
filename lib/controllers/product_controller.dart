@@ -20,6 +20,13 @@ class ProductController extends GetxController {
   List<String> get categories => _categories;
   bool get isLoading => _isLoading.value;
   
+  // Make wishlist products reactive
+  List<Product> get wishlistProducts {
+    final products = _products.where((product) => _wishlistIds.contains(product.id)).toList();
+    debugPrint('Getting wishlist products: ${products.length} products found for wishlist IDs: $_wishlistIds');
+    return products;
+  }
+  
   int get cartItemCount => _cartItems.fold(0, (sum, item) => sum + item.quantity);
   double get cartTotal => _cartItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
   
@@ -33,6 +40,12 @@ class ProductController extends GetxController {
   
   void _initializeUserData() {
     final authController = Get.find<AuthController>();
+    
+    // Load data immediately if user is already logged in
+    if (authController.currentUser != null) {
+      loadUserCart();
+      loadUserWishlist();
+    }
     
     // Listen to auth state changes to load user-specific data
     ever(authController.currentUser.obs, (user) {
@@ -243,13 +256,19 @@ class ProductController extends GetxController {
   
   Future<void> loadUserWishlist() async {
     final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) return;
+    if (authController.currentUser == null) {
+      debugPrint('No user logged in, cannot load wishlist');
+      return;
+    }
     
     try {
+      debugPrint('Loading wishlist for user: ${authController.currentUser!.id}');
       List<String> wishlistIds = await FirebaseDbService.getUserWishlist(
         authController.currentUser!.id,
       );
+      debugPrint('Loaded wishlist IDs: $wishlistIds');
       _wishlistIds.assignAll(wishlistIds);
+      debugPrint('Current wishlist in controller: $_wishlistIds');
     } catch (e) {
       debugPrint('Error loading wishlist: $e');
     }
@@ -263,12 +282,16 @@ class ProductController extends GetxController {
     }
     
     try {
+      debugPrint('Toggling wishlist for product: $productId');
+      debugPrint('Current wishlist before toggle: $_wishlistIds');
+      
       if (_wishlistIds.contains(productId)) {
         await FirebaseDbService.removeFromWishlist(
           authController.currentUser!.id,
           productId,
         );
         _wishlistIds.remove(productId);
+        debugPrint('Removed from wishlist. New list: $_wishlistIds');
         Get.snackbar('Success', 'Item removed from wishlist');
       } else {
         await FirebaseDbService.addToWishlist(
@@ -276,6 +299,7 @@ class ProductController extends GetxController {
           productId,
         );
         _wishlistIds.add(productId);
+        debugPrint('Added to wishlist. New list: $_wishlistIds');
         Get.snackbar('Success', 'Item added to wishlist');
       }
     } catch (e) {

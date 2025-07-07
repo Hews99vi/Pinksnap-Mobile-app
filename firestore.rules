@@ -1,0 +1,57 @@
+# Firestore Security Rules for PinksMap Mobile App
+
+# Copy these rules to your Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to all users for development
+    // In production, you should add proper authentication checks
+    
+    // Products collection - read for all, write for admin only
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    // Orders collection - allow authenticated users to create orders
+    // and read their own orders, admin can read/write all orders
+    match /orders/{orderId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId || 
+                      request.auth.token.isAdmin == true);
+      allow create: if request.auth != null || true; // Allow guest checkout
+      allow update: if request.auth != null && request.auth.token.isAdmin == true;
+      allow delete: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+                           (request.auth.uid == userId || 
+                            request.auth.token.isAdmin == true);
+    }
+    
+    // Categories collection - read for all
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    // For development - temporary open access (REMOVE IN PRODUCTION!)
+    // Uncomment the line below for testing, but remove it before going live
+    // match /{document=**} {
+    //   allow read, write: if true;
+    // }
+  }
+}
+
+# Instructions:
+# 1. Go to Firebase Console (https://console.firebase.google.com)
+# 2. Select your project
+# 3. Go to Firestore Database > Rules
+# 4. Replace the existing rules with the rules above
+# 5. Click "Publish"
+#
+# For immediate testing, you can temporarily use the open access rule,
+# but make sure to remove it and use proper authentication in production!

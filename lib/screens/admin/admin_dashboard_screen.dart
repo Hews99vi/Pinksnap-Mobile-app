@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
+import '../../controllers/order_controller.dart';
 import '../../controllers/auth_controller.dart';
+import 'admin_orders_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -9,6 +11,7 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProductController productController = Get.put(ProductController());
+    final OrderController orderController = Get.put(OrderController());
     final AuthController authController = Get.find();
 
     return Padding(
@@ -54,22 +57,26 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Orders Card (placeholder)
-                _buildStatCard(
-                  context,
-                  title: 'Total Orders',
-                  value: '156',
-                  icon: Icons.shopping_cart,
-                  color: Colors.orange,
+                // Orders Card
+                Obx(
+                  () => _buildStatCard(
+                    context,
+                    title: 'Total Orders',
+                    value: '${orderController.totalOrders}',
+                    icon: Icons.shopping_cart,
+                    color: Colors.orange,
+                  ),
                 ),
 
-                // Revenue Card (placeholder)
-                _buildStatCard(
-                  context,
-                  title: 'Revenue',
-                  value: '\$12,450',
-                  icon: Icons.attach_money,
-                  color: Colors.purple,
+                // Revenue Card
+                Obx(
+                  () => _buildStatCard(
+                    context,
+                    title: 'Revenue',
+                    value: '\$${orderController.totalRevenue.toStringAsFixed(0)}',
+                    icon: Icons.attach_money,
+                    color: Colors.purple,
+                  ),
                 ),
               ],
             ),
@@ -105,12 +112,7 @@ class AdminDashboardScreen extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Navigate to orders screen (placeholder)
-                    Get.snackbar(
-                      'Coming Soon',
-                      'Orders management will be available soon!',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
+                    Get.to(() => const AdminOrdersScreen());
                   },
                   icon: const Icon(Icons.list_alt),
                   label: const Text('View Orders'),

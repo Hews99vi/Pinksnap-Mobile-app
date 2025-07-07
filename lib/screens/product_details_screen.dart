@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import '../models/product.dart';
 import '../controllers/cart_controller.dart';
+import '../controllers/product_controller.dart';
 import 'checkout_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final PageController _pageController = PageController();
   final CartController _cartController = Get.put(CartController());
+  final ProductController _productController = Get.put(ProductController());
   
   int _currentImageIndex = 0;
   String? _selectedSize;
@@ -51,15 +53,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               background: _buildImageCarousel(),
             ),
             actions: [
+              Obx(() {
+                bool isInWishlist = _productController.isInWishlist(widget.product.id);
+                return IconButton(
+                  onPressed: () {
+                    _productController.toggleWishlist(widget.product.id);
+                  },
+                  icon: Icon(
+                    isInWishlist ? Icons.favorite : Icons.favorite_border,
+                    color: isInWishlist ? Colors.red : Colors.grey[600],
+                  ),
+                );
+              }),
               IconButton(
                 onPressed: () {
-                  // TODO: Add to wishlist functionality
-                },
-                icon: const Icon(Icons.favorite_border),
-              ),
-              IconButton(
-                onPressed: () {
-                  // TODO: Share functionality
+                  // Simple share functionality
+                  Get.snackbar(
+                    'Share', 
+                    'Share feature coming soon!',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
                 },
                 icon: const Icon(Icons.share),
               ),
@@ -420,6 +433,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           Expanded(
             child: ElevatedButton(
               onPressed: canAddToCart ? () {
+                // Clear cart and add only this item for Buy Now
+                _cartController.clearCart();
                 _cartController.addToCart(
                   widget.product,
                   _selectedSize!,
