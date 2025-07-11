@@ -42,6 +42,9 @@ dependencies:
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
   firebase_storage: ^12.3.4
+  # Stripe Payment
+  flutter_stripe: ^11.1.0
+  dio: ^5.4.0  # For API calls to your backend
 
 dev_dependencies:
   flutter_test:

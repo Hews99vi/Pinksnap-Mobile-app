@@ -14,6 +14,7 @@ class Order {
   final DateTime? updatedAt;
   final String? trackingNumber;
   final String? notes;
+  final String? paymentIntentId; // Add this field
 
   Order({
     required this.id,
@@ -29,6 +30,7 @@ class Order {
     this.updatedAt,
     this.trackingNumber,
     this.notes,
+    this.paymentIntentId, // Add this parameter
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class Order {
           : null,
       trackingNumber: json['trackingNumber'],
       notes: json['notes'],
+      paymentIntentId: json['paymentIntentId'], // Add this line
     );
   }
 
@@ -72,6 +75,7 @@ class Order {
       'updatedAt': updatedAt?.toIso8601String(),
       'trackingNumber': trackingNumber,
       'notes': notes,
+      'paymentIntentId': paymentIntentId, // Add this line
     };
   }
 
@@ -89,6 +93,7 @@ class Order {
     DateTime? updatedAt,
     String? trackingNumber,
     String? notes,
+    String? paymentIntentId, // Add this parameter
   }) {
     return Order(
       id: id ?? this.id,
@@ -104,6 +109,7 @@ class Order {
       updatedAt: updatedAt ?? this.updatedAt,
       trackingNumber: trackingNumber ?? this.trackingNumber,
       notes: notes ?? this.notes,
+      paymentIntentId: paymentIntentId ?? this.paymentIntentId, // Add this line
     );
   }
 }

@@ -75,6 +75,7 @@ class OrderController extends GetxController {
     required String customerEmail,
     required List<CartItem> cartItems,
     required ShippingAddress shippingAddress,
+    String? paymentIntentId, // Add this parameter
   }) async {
     try {
       debugPrint('Creating order for user: $userId');
@@ -102,8 +103,9 @@ class OrderController extends GetxController {
         'shippingAddress': shippingAddress.toJson(),
         'totalAmount': totalAmount,
         'status': OrderStatus.pending.toString().split('.').last,
-        'paymentStatus': PaymentStatus.pending.toString().split('.').last,
+        'paymentStatus': paymentIntentId != null ? PaymentStatus.paid.toString().split('.').last : PaymentStatus.pending.toString().split('.').last,
         'createdAt': DateTime.now().toIso8601String(),
+        'paymentIntentId': paymentIntentId, // Add this line
       };
 
       debugPrint('Order data prepared, attempting to save to Firestore...');
@@ -121,8 +123,9 @@ class OrderController extends GetxController {
         shippingAddress: shippingAddress,
         totalAmount: totalAmount,
         status: OrderStatus.pending,
-        paymentStatus: PaymentStatus.pending,
+        paymentStatus: paymentIntentId != null ? PaymentStatus.paid : PaymentStatus.pending,
         createdAt: DateTime.now(),
+        paymentIntentId: paymentIntentId, // Add this line
       );
       
       // Add the order to local list

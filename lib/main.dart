@@ -6,6 +6,7 @@ import 'package:pinksmapmobile/utils/theme.dart';
 import 'screens/login_screen.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/product_controller.dart';
+import 'services/stripe_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize Stripe
+  StripeService().init();
   
   // Initialize controllers
   Get.put(AuthController());

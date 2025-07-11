@@ -4,6 +4,7 @@ import '../controllers/cart_controller.dart';
 import '../controllers/order_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../models/order.dart';
+import 'payment_method_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -415,11 +416,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Place Order Button
+                  // Continue to Payment Button
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _isProcessingOrder ? null : () {
-                        _processOrder(cartController);
+                        _navigateToPayment(cartController);
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -438,7 +439,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ),
                             )
                           : const Text(
-                              'Place Order',
+                              'Continue to Payment',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -456,7 +457,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Future<void> _processOrder(CartController cartController) async {
+  void _navigateToPayment(CartController cartController) {
+    // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -471,6 +473,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
+    print('DEBUG: Navigating to payment method screen');
+    
+    // Navigate to payment method screen
+    Get.to(() => PaymentMethodScreen(
+      totalAmount: cartController.totalAmount,
+      onPaymentSuccess: () {
+        print('DEBUG: Payment successful, creating order');
+        _createOrderAfterPayment(cartController);
+      },
+      onPaymentCancel: () {
+        print('DEBUG: Payment cancelled');
+        Get.back(); // Just go back to checkout screen
+      },
+    ));
+  }
+
+  Future<void> _createOrderAfterPayment(CartController cartController) async {
     setState(() {
       _isProcessingOrder = true;
     });
@@ -486,19 +505,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         zipCode: _zipCodeController.text,
       );
 
+      print('DEBUG: Creating order after successful payment');
       final orderId = await orderController.createOrder(
         userId: authController.currentUser?.id ?? 'guest',
         customerName: _fullNameController.text,
         customerEmail: authController.currentUser?.email ?? 'guest@example.com',
         cartItems: cartController.cartItems,
         shippingAddress: shippingAddress,
+        paymentIntentId: 'demo_payment_${DateTime.now().millisecondsSinceEpoch}',
       );
 
       // Clear the cart after successful order
       cartController.clearCart();
 
+      print('DEBUG: Order created successfully: $orderId');
       _showOrderSuccessDialog(orderId);
     } catch (e) {
+      print('DEBUG: Error creating order: $e');
       Get.snackbar(
         'Error',
         'Failed to place order: $e',
