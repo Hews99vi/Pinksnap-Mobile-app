@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/order_controller.dart';
 import '../../models/order.dart';
+import 'order_status_update_screen.dart';
+import '../../utils/app_bar_utils.dart';
 
 class DateFormatter {
   static String formatDate(DateTime date) {
@@ -44,14 +46,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Order Management',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
+      appBar: AppBarUtils.whiteAppBar(
+        title: 'Order Management',
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -67,6 +63,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
           IconButton(
             onPressed: () => _orderController.loadOrders(),
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Orders',
           ),
         ],
       ),
@@ -280,17 +277,16 @@ class OrderDetailsScreen extends StatelessWidget {
     final OrderController orderController = Get.find();
     
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Order #${order.id.substring(0, 8).toUpperCase()}'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
+      appBar: AppBarUtils.whiteAppBar(
+        title: 'Order #${order.id.substring(0, 8).toUpperCase()}',
         actions: [
           PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Order Actions',
             onSelected: (value) async {
               switch (value) {
                 case 'edit_status':
-                  _showStatusUpdateDialog(context, orderController);
+                  Get.to(() => OrderStatusUpdateScreen(order: order));
                   break;
                 case 'edit_payment':
                   _showPaymentStatusDialog(context, orderController);
@@ -306,19 +302,43 @@ class OrderDetailsScreen extends StatelessWidget {
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit_status',
-                child: Text('Update Status'),
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 20),
+                    SizedBox(width: 8),
+                    Text('Update Status & Tracking'),
+                  ],
+                ),
               ),
               const PopupMenuItem(
                 value: 'edit_payment',
-                child: Text('Update Payment'),
+                child: Row(
+                  children: [
+                    Icon(Icons.payment, size: 20),
+                    SizedBox(width: 8),
+                    Text('Update Payment'),
+                  ],
+                ),
               ),
               const PopupMenuItem(
                 value: 'add_tracking',
-                child: Text('Add Tracking'),
+                child: Row(
+                  children: [
+                    Icon(Icons.local_shipping, size: 20),
+                    SizedBox(width: 8),
+                    Text('Add Tracking'),
+                  ],
+                ),
               ),
               const PopupMenuItem(
                 value: 'add_notes',
-                child: Text('Add Notes'),
+                child: Row(
+                  children: [
+                    Icon(Icons.notes, size: 20),
+                    SizedBox(width: 8),
+                    Text('Add Notes'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -508,33 +528,168 @@ class OrderDetailsScreen extends StatelessWidget {
               'Order Timeline',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            
+            // Current Status with Progress
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: order.status.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: order.status.color.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: order.status.color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      order.status.icon,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current Status: ${order.status.displayName}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: order.status.color,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.status.description,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
             _buildTimelineItem(
               'Order Placed',
               DateFormatter.formatDateTime(order.createdAt),
               true,
+              Icons.shopping_cart,
+              Colors.blue,
             ),
-            if (order.updatedAt != null)
+            if (order.status.progressValue >= 2)
               _buildTimelineItem(
-                'Last Updated',
-                DateFormatter.formatDateTime(order.updatedAt!),
-                false,
+                'Order Confirmed',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : 'Pending',
+                order.status.progressValue >= 2,
+                Icons.check_circle_outline,
+                Colors.blue,
               ),
-            if (order.notes != null && order.notes!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Notes:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+            if (order.status.progressValue >= 3)
+              _buildTimelineItem(
+                'Processing',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : 'Pending',
+                order.status.progressValue >= 3,
+                Icons.inventory,
+                Colors.indigo,
+              ),
+            if (order.status.progressValue >= 4)
+              _buildTimelineItem(
+                'Shipped',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : 'Pending',
+                order.status.progressValue >= 4,
+                Icons.local_shipping,
+                Colors.purple,
+              ),
+            if (order.status.progressValue >= 5)
+              _buildTimelineItem(
+                'Delivered',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : 'Pending',
+                order.status.progressValue >= 5,
+                Icons.home,
+                Colors.green,
+              ),
+            
+            if (order.status == OrderStatus.cancelled)
+              _buildTimelineItem(
+                'Order Cancelled',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : DateFormatter.formatDateTime(order.createdAt),
+                true,
+                Icons.cancel,
+                Colors.red,
+              ),
+            
+            if (order.status == OrderStatus.refunded)
+              _buildTimelineItem(
+                'Order Refunded',
+                order.updatedAt != null 
+                    ? DateFormatter.formatDateTime(order.updatedAt!)
+                    : DateFormatter.formatDateTime(order.createdAt),
+                true,
+                Icons.money_off,
+                Colors.grey,
+              ),
+            
+            if (order.notes != null && order.notes!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notes,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Order Notes:',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[200]!),
                     ),
-                    const SizedBox(height: 4),
-                    Text(order.notes!),
-                  ],
-                ),
+                    child: Text(
+                      order.notes!,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
+            ],
           ],
         ),
       ),
@@ -566,28 +721,38 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTimelineItem(String title, String time, bool isFirst) {
+  Widget _buildTimelineItem(String title, String time, bool isCompleted, IconData icon, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: isFirst ? Colors.green : Colors.grey,
+              color: isCompleted ? color : Colors.grey[300],
               shape: BoxShape.circle,
             ),
+            child: Icon(
+              icon,
+              color: isCompleted ? Colors.white : Colors.grey[600],
+              size: 16,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isCompleted ? Colors.black87 : Colors.grey[600],
+                    fontSize: 14,
+                  ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   time,
                   style: TextStyle(
@@ -599,31 +764,6 @@ class OrderDetailsScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showStatusUpdateDialog(BuildContext context, OrderController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Update Order Status'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: OrderStatus.values.map((status) {
-            return ListTile(
-              title: Text(status.displayName),
-              leading: Icon(
-                order.status == status ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: status.color,
-              ),
-              onTap: () {
-                controller.updateOrderStatus(order.id, status);
-                Get.back();
-              },
-            );
-          }).toList(),
-        ),
       ),
     );
   }

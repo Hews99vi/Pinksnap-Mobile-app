@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/order_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../models/order.dart';
+import 'order_details_screen.dart';
+import '../utils/app_bar_utils.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
@@ -25,17 +27,8 @@ class OrderHistoryScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'My Orders',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
+      appBar: AppBarUtils.whiteAppBar(
+        title: 'My Orders',
         centerTitle: true,
       ),
       body: Obx(() {
@@ -140,7 +133,11 @@ class OrderHistoryScreen extends StatelessWidget {
         }
 
         return RefreshIndicator(
-          onRefresh: () => orderController.loadUserOrders(authController.currentUser!.id),
+          onRefresh: () async {
+            if (authController.currentUser != null) {
+              return orderController.loadUserOrders(authController.currentUser!.id);
+            }
+          },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: userOrders.length,
@@ -226,7 +223,7 @@ class OrderHistoryScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+                Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
@@ -240,12 +237,18 @@ class OrderHistoryScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                'Placed on ${_formatDate(order.createdAt)}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Placed on ${_formatDate(order.createdAt)}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  _buildPaymentStatusChip(order.paymentStatus),
+                ],
               ),
               const SizedBox(height: 12),
               Row(
@@ -254,11 +257,32 @@ class OrderHistoryScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (order.status == OrderStatus.shipped && order.trackingNumber != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[100],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'Tracking Available',
+                                  style: TextStyle(
+                                    color: Colors.blue[700],
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -268,6 +292,16 @@ class OrderHistoryScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.pink,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.status.description,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -378,99 +412,56 @@ class OrderHistoryScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildPaymentStatusChip(PaymentStatus paymentStatus) {
+    Color backgroundColor;
+    Color textColor;
+    String text;
+
+    switch (paymentStatus) {
+      case PaymentStatus.pending:
+        backgroundColor = Colors.orange[100]!;
+        textColor = Colors.orange[700]!;
+        text = 'Payment Pending';
+        break;
+      case PaymentStatus.paid:
+        backgroundColor = Colors.green[100]!;
+        textColor = Colors.green[700]!;
+        text = 'Paid';
+        break;
+      case PaymentStatus.failed:
+        backgroundColor = Colors.red[100]!;
+        textColor = Colors.red[700]!;
+        text = 'Payment Failed';
+        break;
+      case PaymentStatus.refunded:
+        backgroundColor = Colors.grey[100]!;
+        textColor = Colors.grey[700]!;
+        text = 'Refunded';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.w500,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
 
   void _showOrderDetails(Order order) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Order Details',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const Divider(),
-            const SizedBox(height: 16),
-            Text(
-              'Order #${order.id.substring(0, 8).toUpperCase()}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text('Placed: ${_formatDate(order.createdAt)}'),
-            const SizedBox(height: 16),
-            const Text(
-              'Items:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...order.items.map((item) => ListTile(
-              leading: Image.network(
-                item.productImage,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              ),
-              title: Text(item.productName),
-              subtitle: Text('Size: ${item.size} • Qty: ${item.quantity}'),
-              trailing: Text('\$${item.total.toStringAsFixed(2)}'),
-            )),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total:',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '\$${order.totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.pink,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Shipping Address:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(order.shippingAddress.fullAddress),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
+    Get.to(() => OrderDetailsScreen(order: order));
   }
 }

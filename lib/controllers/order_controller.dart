@@ -199,28 +199,48 @@ class OrderController extends GetxController {
 
       // Update local order
       final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+      Order? updatedOrder;
       if (orderIndex != -1) {
-        _orders[orderIndex] = _orders[orderIndex].copyWith(
+        updatedOrder = _orders[orderIndex].copyWith(
           status: newStatus,
           updatedAt: DateTime.now(),
         );
+        _orders[orderIndex] = updatedOrder;
         _orders.refresh();
       }
 
-      Get.snackbar(
-        'Success',
-        'Order status updated successfully',
-        backgroundColor: Get.theme.primaryColor,
-        colorText: Colors.white,
-      );
+      // Send notification to user about status update
+      if (updatedOrder != null) {
+        await _sendStatusUpdateNotification(updatedOrder, newStatus);
+      }
+
     } catch (e) {
       _error.value = 'Failed to update order status: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to update order status',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      rethrow;
+    }
+  }
+
+  Future<void> _sendStatusUpdateNotification(Order order, OrderStatus newStatus) async {
+    try {
+      // Create a notification document in Firestore
+      await _firestore.collection('notifications').add({
+        'userId': order.userId,
+        'type': 'order_status_update',
+        'title': 'Order Status Updated',
+        'message': 'Your order #${order.id.substring(0, 8).toUpperCase()} status has been updated to ${newStatus.displayName}',
+        'data': {
+          'orderId': order.id,
+          'status': newStatus.toString().split('.').last,
+          'description': newStatus.description,
+        },
+        'createdAt': DateTime.now().toIso8601String(),
+        'read': false,
+      });
+
+      debugPrint('Status update notification sent for order ${order.id}');
+    } catch (e) {
+      debugPrint('Failed to send status update notification: $e');
+      // Don't throw error as this is not critical
     }
   }
 
@@ -267,28 +287,47 @@ class OrderController extends GetxController {
 
       // Update local order
       final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+      Order? updatedOrder;
       if (orderIndex != -1) {
-        _orders[orderIndex] = _orders[orderIndex].copyWith(
+        updatedOrder = _orders[orderIndex].copyWith(
           trackingNumber: trackingNumber,
           updatedAt: DateTime.now(),
         );
+        _orders[orderIndex] = updatedOrder;
         _orders.refresh();
       }
 
-      Get.snackbar(
-        'Success',
-        'Tracking number updated successfully',
-        backgroundColor: Get.theme.primaryColor,
-        colorText: Colors.white,
-      );
+      // Send notification to user about tracking number
+      if (updatedOrder != null) {
+        await _sendTrackingNotification(updatedOrder, trackingNumber);
+      }
+
     } catch (e) {
       _error.value = 'Failed to update tracking number: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to update tracking number',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      rethrow;
+    }
+  }
+
+  Future<void> _sendTrackingNotification(Order order, String trackingNumber) async {
+    try {
+      // Create a notification document in Firestore
+      await _firestore.collection('notifications').add({
+        'userId': order.userId,
+        'type': 'tracking_added',
+        'title': 'Tracking Number Added',
+        'message': 'Tracking number for your order #${order.id.substring(0, 8).toUpperCase()} is now available: $trackingNumber',
+        'data': {
+          'orderId': order.id,
+          'trackingNumber': trackingNumber,
+        },
+        'createdAt': DateTime.now().toIso8601String(),
+        'read': false,
+      });
+
+      debugPrint('Tracking notification sent for order ${order.id}');
+    } catch (e) {
+      debugPrint('Failed to send tracking notification: $e');
+      // Don't throw error as this is not critical
     }
   }
 
@@ -309,20 +348,9 @@ class OrderController extends GetxController {
         _orders.refresh();
       }
 
-      Get.snackbar(
-        'Success',
-        'Order notes updated successfully',
-        backgroundColor: Get.theme.primaryColor,
-        colorText: Colors.white,
-      );
     } catch (e) {
       _error.value = 'Failed to update order notes: $e';
-      Get.snackbar(
-        'Error',
-        'Failed to update order notes',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      rethrow;
     }
   }
 
@@ -444,6 +472,42 @@ class OrderController extends GetxController {
       await loadUserOrders(userId);
     } catch (e) {
       debugPrint('Error creating sample orders: $e');
+    }
+  }
+
+  Future<void> updateOrderBatch(String orderId, Map<String, dynamic> updateData, OrderStatus? newStatus) async {
+    try {
+      // Update Firestore document
+      await _firestore.collection('orders').doc(orderId).update(updateData);
+
+      // Update local order
+      final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+      Order? updatedOrder;
+      if (orderIndex != -1) {
+        final currentOrder = _orders[orderIndex];
+        updatedOrder = currentOrder.copyWith(
+          status: newStatus ?? currentOrder.status,
+          trackingNumber: updateData['trackingNumber'] ?? currentOrder.trackingNumber,
+          notes: updateData['notes'] ?? currentOrder.notes,
+          updatedAt: DateTime.now(),
+        );
+        _orders[orderIndex] = updatedOrder;
+        _orders.refresh();
+      }
+
+      // Send notification if status was updated
+      if (newStatus != null && updatedOrder != null) {
+        await _sendStatusUpdateNotification(updatedOrder, newStatus);
+      }
+
+      // Send tracking notification if tracking number was updated
+      if (updateData.containsKey('trackingNumber') && updatedOrder != null) {
+        await _sendTrackingNotification(updatedOrder, updateData['trackingNumber']);
+      }
+
+    } catch (e) {
+      _error.value = 'Failed to update order: $e';
+      rethrow; // Re-throw to let the UI handle the error
     }
   }
 }

@@ -34,30 +34,42 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['id'],
-      userId: json['userId'],
-      customerName: json['customerName'],
-      customerEmail: json['customerEmail'],
-      items: (json['items'] as List)
-          .map((item) => OrderItem.fromJson(item))
-          .toList(),
-      shippingAddress: ShippingAddress.fromJson(json['shippingAddress']),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      status: OrderStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
-      ),
-      paymentStatus: PaymentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['paymentStatus'],
-      ),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
-          : null,
-      trackingNumber: json['trackingNumber'],
-      notes: json['notes'],
-      paymentIntentId: json['paymentIntentId'], // Add this line
-    );
+    try {
+      return Order(
+        id: json['id'] ?? '',
+        userId: json['userId'] ?? '',
+        customerName: json['customerName'] ?? '',
+        customerEmail: json['customerEmail'] ?? '',
+        items: (json['items'] as List?)
+            ?.map((item) => OrderItem.fromJson(item))
+            .toList() ?? [],
+        shippingAddress: json['shippingAddress'] != null 
+            ? ShippingAddress.fromJson(json['shippingAddress'])
+            : ShippingAddress(fullName: '', address: '', city: '', zipCode: ''),
+        totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
+        status: OrderStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == (json['status'] ?? 'pending'),
+          orElse: () => OrderStatus.pending,
+        ),
+        paymentStatus: PaymentStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == (json['paymentStatus'] ?? 'pending'),
+          orElse: () => PaymentStatus.pending,
+        ),
+        createdAt: json['createdAt'] != null 
+            ? DateTime.parse(json['createdAt']) 
+            : DateTime.now(),
+        updatedAt: json['updatedAt'] != null 
+            ? DateTime.parse(json['updatedAt']) 
+            : null,
+        trackingNumber: json['trackingNumber'],
+        notes: json['notes'],
+        paymentIntentId: json['paymentIntentId'],
+      );
+    } catch (e) {
+      print('Error parsing Order from JSON: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -134,15 +146,21 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
-    return OrderItem(
-      productId: json['productId'],
-      productName: json['productName'],
-      productImage: json['productImage'],
-      size: json['size'],
-      quantity: json['quantity'],
-      price: (json['price'] as num).toDouble(),
-      total: (json['total'] as num).toDouble(),
-    );
+    try {
+      return OrderItem(
+        productId: json['productId'] ?? '',
+        productName: json['productName'] ?? '',
+        productImage: json['productImage'] ?? '',
+        size: json['size'] ?? '',
+        quantity: json['quantity'] ?? 0,
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      );
+    } catch (e) {
+      print('Error parsing OrderItem from JSON: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -176,14 +194,20 @@ class ShippingAddress {
   });
 
   factory ShippingAddress.fromJson(Map<String, dynamic> json) {
-    return ShippingAddress(
-      fullName: json['fullName'],
-      address: json['address'],
-      city: json['city'],
-      zipCode: json['zipCode'],
-      state: json['state'],
-      country: json['country'],
-    );
+    try {
+      return ShippingAddress(
+        fullName: json['fullName'] ?? '',
+        address: json['address'] ?? '',
+        city: json['city'] ?? '',
+        zipCode: json['zipCode'] ?? '',
+        state: json['state'],
+        country: json['country'],
+      );
+    } catch (e) {
+      print('Error parsing ShippingAddress from JSON: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -242,6 +266,44 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
 
+  String get description {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'Your order has been received and is waiting for confirmation.';
+      case OrderStatus.confirmed:
+        return 'Your order has been confirmed and will be processed soon.';
+      case OrderStatus.processing:
+        return 'Your order is being prepared and packaged.';
+      case OrderStatus.shipped:
+        return 'Your order has been shipped and is on the way.';
+      case OrderStatus.delivered:
+        return 'Your order has been successfully delivered.';
+      case OrderStatus.cancelled:
+        return 'This order has been cancelled.';
+      case OrderStatus.refunded:
+        return 'This order has been refunded.';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case OrderStatus.pending:
+        return Icons.schedule;
+      case OrderStatus.confirmed:
+        return Icons.check_circle_outline;
+      case OrderStatus.processing:
+        return Icons.inventory;
+      case OrderStatus.shipped:
+        return Icons.local_shipping;
+      case OrderStatus.delivered:
+        return Icons.home;
+      case OrderStatus.cancelled:
+        return Icons.cancel;
+      case OrderStatus.refunded:
+        return Icons.money_off;
+    }
+  }
+
   Color get color {
     switch (this) {
       case OrderStatus.pending:
@@ -260,6 +322,33 @@ extension OrderStatusExtension on OrderStatus {
         return Colors.grey;
     }
   }
+
+  int get progressValue {
+    switch (this) {
+      case OrderStatus.pending:
+        return 1;
+      case OrderStatus.confirmed:
+        return 2;
+      case OrderStatus.processing:
+        return 3;
+      case OrderStatus.shipped:
+        return 4;
+      case OrderStatus.delivered:
+        return 5;
+      case OrderStatus.cancelled:
+        return 0;
+      case OrderStatus.refunded:
+        return 0;
+    }
+  }
+
+  static List<OrderStatus> get progressOrder => [
+    OrderStatus.pending,
+    OrderStatus.confirmed,
+    OrderStatus.processing,
+    OrderStatus.shipped,
+    OrderStatus.delivered,
+  ];
 }
 
 extension PaymentStatusExtension on PaymentStatus {
