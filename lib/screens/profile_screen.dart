@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user.dart';
 import 'login_screen.dart';
+import 'order_history_screen.dart';
+import 'shipping_address_screen.dart';
+import 'payment_method_management_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -150,21 +153,21 @@ class ProfileScreen extends StatelessWidget {
           icon: Icons.shopping_bag,
           title: 'My Orders',
           onTap: () {
-            Get.snackbar('Coming Soon', 'Order history will be available soon!');
+            Get.to(() => const OrderHistoryScreen());
           },
         ),
         _buildMenuItem(
           icon: Icons.location_on,
           title: 'Shipping Addresses',
           onTap: () {
-            Get.snackbar('Coming Soon', 'Address management will be available soon!');
+            Get.to(() => const ShippingAddressScreen());
           },
         ),
         _buildMenuItem(
           icon: Icons.payment,
           title: 'Payment Methods',
           onTap: () {
-            Get.snackbar('Coming Soon', 'Payment methods will be available soon!');
+            Get.to(() => const PaymentMethodManagementScreen());
           },
         ),
         _buildMenuItem(

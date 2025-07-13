@@ -6,6 +6,8 @@ import 'package:pinksmapmobile/utils/theme.dart';
 import 'screens/login_screen.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/product_controller.dart';
+import 'controllers/cart_controller.dart';
+import 'controllers/order_controller.dart';
 import 'services/stripe_service.dart';
 
 void main() async {
@@ -22,6 +24,8 @@ void main() async {
   // Initialize controllers
   Get.put(AuthController());
   Get.put(ProductController());
+  Get.put(CartController());
+  Get.put(OrderController());
   
   runApp(const PinkSnapApp());
 }

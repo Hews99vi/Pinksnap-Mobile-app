@@ -4,7 +4,9 @@ import '../controllers/cart_controller.dart';
 import '../controllers/order_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../models/order.dart';
+import '../models/shipping_address.dart' as user_shipping;
 import 'payment_method_screen.dart';
+import 'shipping_address_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -21,6 +23,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _zipCodeController = TextEditingController();
   
   bool _isProcessingOrder = false;
+  user_shipping.ShippingAddress? _selectedShippingAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserShippingAddress();
+  }
+
+  void _loadUserShippingAddress() {
+    final AuthController authController = Get.find();
+    final user = authController.currentUser;
+    
+    if (user != null && user.defaultShippingAddress != null) {
+      final defaultAddress = user.defaultShippingAddress!;
+      setState(() {
+        _selectedShippingAddress = defaultAddress;
+        _fullNameController.text = defaultAddress.name;
+        _addressController.text = defaultAddress.street;
+        _cityController.text = defaultAddress.city;
+        _zipCodeController.text = defaultAddress.zipCode;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -143,13 +168,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 24),
               
               // Shipping Address Section
-              const Text(
-                'Shipping Address',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Shipping Address',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Obx(() {
+                    final AuthController authController = Get.find();
+                    final user = authController.currentUser;
+                    if (user != null && user.shippingAddresses.isNotEmpty) {
+                      return TextButton.icon(
+                        onPressed: () => _showAddressSelection(),
+                        icon: const Icon(Icons.location_on, size: 16),
+                        label: const Text('Change'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.pink,
+                        ),
+                      );
+                    }
+                    return TextButton.icon(
+                      onPressed: () => Get.to(() => const ShippingAddressScreen()),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add Address'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.pink,
+                      ),
+                    );
+                  }),
+                ],
               ),
+              if (_selectedShippingAddress != null) ...[
+                const SizedBox(height: 8),
+                Card(
+                  elevation: 1,
+                  color: Colors.pink[50],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.pink[600], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedShippingAddress!.name,
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                _selectedShippingAddress!.fullAddress,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               Card(
                 elevation: 2,
@@ -624,6 +713,85 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: const Text('Continue Shopping'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAddressSelection() {
+    final AuthController authController = Get.find();
+    final user = authController.currentUser;
+    
+    if (user == null || user.shippingAddresses.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Select Shipping Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(),
+            ...user.shippingAddresses.map((address) => ListTile(
+              leading: Icon(
+                Icons.location_on,
+                color: _selectedShippingAddress?.id == address.id 
+                    ? Colors.pink : Colors.grey,
+              ),
+              title: Text(address.name),
+              subtitle: Text(address.fullAddress),
+              trailing: _selectedShippingAddress?.id == address.id
+                  ? Icon(Icons.check_circle, color: Colors.pink)
+                  : null,
+              onTap: () {
+                setState(() {
+                  _selectedShippingAddress = address;
+                  _fullNameController.text = address.name;
+                  _addressController.text = address.street;
+                  _cityController.text = address.city;
+                  _zipCodeController.text = address.zipCode;
+                });
+                Navigator.pop(context);
+              },
+            )),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Get.to(() => const ShippingAddressScreen());
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add New Address'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.pink,
+                  side: const BorderSide(color: Colors.pink),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

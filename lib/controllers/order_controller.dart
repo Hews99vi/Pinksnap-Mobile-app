@@ -53,17 +53,67 @@ class OrderController extends GetxController {
 
       final querySnapshot = await _firestore
           .collection('orders')
-          .orderBy('createdAt', descending: true)
           .get();
 
       final orders = querySnapshot.docs
-          .map((doc) => Order.fromJson({...doc.data(), 'id': doc.id}))
+          .map((doc) {
+            final data = Map<String, dynamic>.from(doc.data() as Map);
+            data['id'] = doc.id;
+            return Order.fromJson(data);
+          })
           .toList();
+
+      // Sort locally by creation date
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       _orders.value = orders;
     } catch (e) {
       _error.value = 'Failed to load orders: $e';
       debugPrint('Error loading orders: $e');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  Future<void> loadUserOrders(String userId) async {
+    try {
+      _isLoading.value = true;
+      _error.value = '';
+
+      // First try with orderBy, if that fails, try without orderBy
+      firestore.Query query = _firestore
+          .collection('orders')
+          .where('userId', isEqualTo: userId);
+
+      firestore.QuerySnapshot querySnapshot;
+      
+      try {
+        // Try with orderBy first
+        querySnapshot = await query
+            .orderBy('createdAt', descending: true)
+            .get();
+      } catch (indexError) {
+        debugPrint('Index not available, querying without orderBy: $indexError');
+        // If index doesn't exist, query without orderBy
+        querySnapshot = await query.get();
+      }
+
+      final orders = querySnapshot.docs
+          .map((doc) {
+            final data = Map<String, dynamic>.from(doc.data() as Map);
+            data['id'] = doc.id;
+            return Order.fromJson(data);
+          })
+          .toList();
+
+      // Sort locally if we couldn't sort on the server
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      _orders.value = orders;
+      debugPrint('Loaded ${orders.length} orders for user $userId');
+    } catch (e) {
+      _error.value = 'Failed to load user orders. Please try again.';
+      debugPrint('Error loading user orders: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -312,5 +362,88 @@ class OrderController extends GetxController {
 
   void clearError() {
     _error.value = '';
+  }
+
+  // Method to create sample orders for testing
+  Future<void> createSampleOrders(String userId) async {
+    try {
+      // Sample order data
+      final sampleOrders = [
+        {
+          'userId': userId,
+          'customerName': 'Test User',
+          'customerEmail': 'test@example.com',
+          'orderItems': [
+            {
+              'productId': 'sample_1',
+              'productName': 'Pink Summer Dress',
+              'productImage': 'https://example.com/dress.jpg',
+              'size': 'M',
+              'quantity': 1,
+              'price': 49.99,
+              'total': 49.99,
+            }
+          ],
+          'totalAmount': 49.99,
+          'status': OrderStatus.pending.toString(),
+          'paymentStatus': PaymentStatus.pending.toString(),
+          'shippingAddress': {
+            'name': 'Test User',
+            'addressLine1': '123 Test Street',
+            'addressLine2': 'Apt 4B',
+            'city': 'Test City',
+            'state': 'Test State',
+            'zipCode': '12345',
+            'country': 'Test Country',
+            'phone': '+1234567890',
+          },
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'estimatedDelivery': DateTime.now().add(const Duration(days: 5)).millisecondsSinceEpoch,
+        },
+        {
+          'userId': userId,
+          'customerName': 'Test User',
+          'customerEmail': 'test@example.com',
+          'orderItems': [
+            {
+              'productId': 'sample_2',
+              'productName': 'Pink Floral Top',
+              'productImage': 'https://example.com/top.jpg',
+              'size': 'S',
+              'quantity': 2,
+              'price': 29.99,
+              'total': 59.98,
+            }
+          ],
+          'totalAmount': 59.98,
+          'status': OrderStatus.shipped.toString(),
+          'paymentStatus': PaymentStatus.paid.toString(),
+          'trackingNumber': 'TRK123456789',
+          'shippingAddress': {
+            'name': 'Test User',
+            'addressLine1': '456 Sample Ave',
+            'city': 'Sample City',
+            'state': 'Sample State',
+            'zipCode': '67890',
+            'country': 'Sample Country',
+            'phone': '+0987654321',
+          },
+          'createdAt': DateTime.now().subtract(const Duration(days: 3)).millisecondsSinceEpoch,
+          'estimatedDelivery': DateTime.now().add(const Duration(days: 2)).millisecondsSinceEpoch,
+        }
+      ];
+
+      // Create the orders in Firestore
+      for (final orderData in sampleOrders) {
+        await _firestore.collection('orders').add(orderData);
+      }
+      
+      debugPrint('Created ${sampleOrders.length} sample orders for user $userId');
+      
+      // Reload orders to show the new ones
+      await loadUserOrders(userId);
+    } catch (e) {
+      debugPrint('Error creating sample orders: $e');
+    }
   }
 }
