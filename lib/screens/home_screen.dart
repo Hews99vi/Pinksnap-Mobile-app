@@ -6,10 +6,12 @@ import '../widgets/product_card.dart';
 import '../widgets/hero_carousel.dart';
 import '../widgets/best_selling_section.dart';
 import '../widgets/designer_categories_section.dart';
+import '../widgets/image_search_promo_card.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/cart_controller.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
+import 'image_search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -131,7 +133,38 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement search
+                    // TODO: Implement text search
+                  },
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.pink[400]!, Colors.pink[600]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink[200]!.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  onPressed: () {
+                    Get.to(() => const ImageSearchScreen());
                   },
                 ),
               ),
@@ -196,6 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.only(top: 16),
               child: HeroCarousel(),
             ),
+          ),
+          const SliverToBoxAdapter(
+            child: ImageSearchPromoCard(),
           ),
           const SliverToBoxAdapter(
             child: Padding(

@@ -206,7 +206,7 @@ class _StripePaymentSimulationDialogState extends State<_StripePaymentSimulation
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       contentPadding: const EdgeInsets.all(0),
-      content: Container(
+      content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.9,
         child: Column(
           mainAxisSize: MainAxisSize.min,

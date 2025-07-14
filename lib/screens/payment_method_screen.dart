@@ -36,12 +36,25 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
+        elevation: 0.5,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onPaymentCancel,
+        automaticallyImplyLeading: true,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              size: 18,
+            ),
+            onPressed: widget.onPaymentCancel,
+            color: Colors.black87,
+            padding: EdgeInsets.zero,
+          ),
         ),
       ),
       body: Column(

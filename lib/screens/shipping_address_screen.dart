@@ -28,6 +28,15 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
         foregroundColor: Colors.black87,
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(
+          color: Colors.black87,
+          size: 24,
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+          color: Colors.black87,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

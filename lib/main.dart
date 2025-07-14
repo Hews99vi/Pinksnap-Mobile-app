@@ -8,6 +8,7 @@ import 'controllers/auth_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'controllers/order_controller.dart';
+import 'controllers/image_search_controller.dart';
 import 'services/stripe_service.dart';
 
 void main() async {
@@ -26,6 +27,7 @@ void main() async {
   Get.put(ProductController());
   Get.put(CartController());
   Get.put(OrderController());
+  Get.put(ImageSearchController());
   
   runApp(const PinkSnapApp());
 }

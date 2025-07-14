@@ -45,6 +45,9 @@ dependencies:
   # Stripe Payment
   flutter_stripe: ^11.1.0
   dio: ^5.4.0  # For API calls to your backend
+  # Image handling
+  image_picker: ^1.0.7  # For picking images from gallery/camera
+  permission_handler: ^11.3.0  # For handling permissions
 
 dev_dependencies:
   flutter_test:

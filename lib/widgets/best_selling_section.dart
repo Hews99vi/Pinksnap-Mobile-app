@@ -119,20 +119,6 @@ class BestSellingSection extends StatelessWidget {
               ),
             ),
           ),
-          Center(
-            child: TextButton(
-              onPressed: () {
-                // TODO: Navigate to see all best sellers
-              },
-              child: Text(
-                'See all →',
-                style: TextStyle(
-                  color: Colors.pink[700],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         ],
       );
     });

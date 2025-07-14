@@ -26,6 +26,15 @@ class CartScreen extends StatelessWidget {
         foregroundColor: Colors.black87,
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(
+          color: Colors.black87,
+          size: 24,
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+          color: Colors.black87,
+        ),
       ),
       body: Obx(() {
         if (cartController.cartItems.isEmpty) {
