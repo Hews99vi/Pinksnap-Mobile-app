@@ -30,7 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -60,11 +59,10 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Search Bar
             Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -103,7 +101,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Filters Section removed for debugging
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
             // Results Count
             Padding(
@@ -122,7 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
 
             // Products Grid
             Expanded(
