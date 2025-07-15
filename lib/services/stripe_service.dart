@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../config/app_config.dart';
+import '../utils/logger.dart';
 
 class StripeService {
   static final StripeService _instance = StripeService._internal();
@@ -11,7 +12,7 @@ class StripeService {
     // Only use the publishable key on client side (this is secure)
     Stripe.publishableKey = AppConfig.stripePublishableKey;
     
-    print('Stripe initialized with publishable key: ${AppConfig.stripePublishableKey.substring(0, 20)}...');
+    Logger.debug('Stripe initialized with publishable key: ${AppConfig.stripePublishableKey.substring(0, 20)}...');
   }
 
   // IMPORTANT: In a real production app, you would have a backend server that:
@@ -31,7 +32,7 @@ class StripeService {
     try {
       // In a real app, this would call your backend server
       // For demo purposes, we'll simulate the response
-      print('Creating payment intent for amount: $amount $currency');
+      Logger.debug('Creating payment intent for amount: $amount $currency');
       
       // Simulate backend processing time
       await Future.delayed(const Duration(milliseconds: 500));
@@ -46,10 +47,10 @@ class StripeService {
         'metadata': metadata ?? {},
       };
       
-      print('Mock payment intent created: ${mockPaymentIntent['id']}');
+      Logger.debug('Mock payment intent created: ${mockPaymentIntent['id']}');
       return mockPaymentIntent;
     } catch (error) {
-      print('Error creating payment intent: $error');
+      Logger.error('Error creating payment intent: $error', error: error);
       return null;
     }
   }
@@ -61,7 +62,7 @@ class StripeService {
     try {
       // For demo purposes, show a simulated payment dialog
       // In a real app, you would use the actual Stripe payment sheet
-      print('Processing demo Stripe payment with client secret: ${paymentIntentClientSecret.substring(0, 20)}...');
+      Logger.debug('Processing demo Stripe payment with client secret: ${paymentIntentClientSecret.substring(0, 20)}...');
       
       // Show a custom payment simulation dialog with card details
       bool? result = await showDialog<bool>(
@@ -72,8 +73,10 @@ class StripeService {
       
       return result ?? false;
     } catch (e) {
-      print('Payment processing error: $e');
-      _showErrorDialog(context, 'An unexpected error occurred');
+      Logger.error('Payment processing error: $e', error: e);
+      if (context.mounted) {
+        _showErrorDialog(context, 'An unexpected error occurred');
+      }
       return false;
     }
   }
@@ -86,7 +89,7 @@ class StripeService {
     try {
       // In a real app, this would call your backend server
       // For demo purposes, we'll simulate the response
-      print('Creating customer for email: $email');
+      Logger.debug('Creating customer for email: $email');
       
       // Simulate backend processing time
       await Future.delayed(const Duration(milliseconds: 300));
@@ -94,10 +97,10 @@ class StripeService {
       // Mock customer ID (this would come from your backend)
       final mockCustomerId = 'cus_mock_${DateTime.now().millisecondsSinceEpoch}';
       
-      print('Mock customer created: $mockCustomerId');
+      Logger.debug('Mock customer created: $mockCustomerId');
       return mockCustomerId;
     } catch (error) {
-      print('Error creating customer: $error');
+      Logger.error('Error creating customer: $error', error: error);
       return null;
     }
   }
@@ -445,7 +448,7 @@ class _StripePaymentSimulationDialogState extends State<_StripePaymentSimulation
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

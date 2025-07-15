@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/logger.dart';
 
 class Order {
   final String id;
@@ -66,8 +67,8 @@ class Order {
         paymentIntentId: json['paymentIntentId'],
       );
     } catch (e) {
-      print('Error parsing Order from JSON: $e');
-      print('JSON data: $json');
+      Logger.error('Error parsing Order from JSON: $e', error: e);
+      Logger.debug('JSON data: $json');
       rethrow;
     }
   }
@@ -157,8 +158,8 @@ class OrderItem {
         total: (json['total'] as num?)?.toDouble() ?? 0.0,
       );
     } catch (e) {
-      print('Error parsing OrderItem from JSON: $e');
-      print('JSON data: $json');
+      Logger.error('Error parsing OrderItem from JSON: $e', error: e);
+      Logger.debug('JSON data: $json');
       rethrow;
     }
   }
@@ -204,8 +205,8 @@ class ShippingAddress {
         country: json['country'],
       );
     } catch (e) {
-      print('Error parsing ShippingAddress from JSON: $e');
-      print('JSON data: $json');
+      Logger.error('Error parsing ShippingAddress from JSON: $e', error: e);
+      Logger.debug('JSON data: $json');
       rethrow;
     }
   }

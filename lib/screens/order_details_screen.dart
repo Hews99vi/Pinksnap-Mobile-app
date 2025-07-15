@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/order.dart';
 import '../controllers/order_controller.dart';
 import '../utils/app_bar_utils.dart';
+import '../utils/logger.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final Order order;
@@ -36,7 +37,7 @@ class OrderDetailsScreen extends StatelessWidget {
               orElse: () => order,
             );
           } catch (e) {
-            print('Error finding updated order: $e');
+            Logger.error('Error finding updated order: $e', error: e);
             updatedOrder = order;
           }
           
@@ -97,7 +98,7 @@ class OrderDetailsScreen extends StatelessWidget {
         ),
       );
     } catch (e) {
-      print('Error building order details: $e');
+      Logger.error('Error building order details: $e', error: e);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

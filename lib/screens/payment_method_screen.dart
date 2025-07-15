@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../config/app_config.dart';
 import '../services/stripe_service.dart';
+import '../utils/logger.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final double totalAmount;
@@ -233,14 +234,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.05) : Colors.white,
+          color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.05) : Colors.white,
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -324,7 +325,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         );
       }
     } catch (e) {
-      print('Payment processing error: $e');
+      Logger.error('Payment processing error: $e', error: e);
       Get.snackbar(
         'Payment Error',
         'Failed to process payment: $e',
@@ -340,7 +341,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   Future<bool> _processStripePayment() async {
     try {
-      print('Processing Stripe payment for amount: \$${widget.totalAmount}');
+      Logger.debug('Processing Stripe payment for amount: \$${widget.totalAmount}');
       
       // Convert amount to cents for Stripe
       int amountInCents = (widget.totalAmount * 100).round();
@@ -359,7 +360,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         throw Exception('Failed to create payment intent');
       }
 
-      print('Payment intent created: ${paymentIntentData['id']}');
+      Logger.debug('Payment intent created: ${paymentIntentData['id']}');
+
+      // Check if context is still mounted before async operation
+      if (!mounted) return false;
 
       // Process the payment using Stripe
       bool success = await _stripeService.processPayment(
@@ -368,23 +372,25 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       );
 
       if (success) {
-        print('Stripe payment successful!');
+        Logger.debug('Stripe payment successful!');
         return true;
       } else {
         throw Exception('Payment was not completed');
       }
     } catch (e) {
-      print('Stripe payment error: $e');
+      Logger.error('Stripe payment error: $e', error: e);
       
       // Show user-friendly error message
-      Get.snackbar(
-        'Payment Failed',
-        e.toString().contains('cancelled') 
-          ? 'Payment was cancelled' 
-          : 'Payment failed. Please try again.',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      if (context.mounted) {
+        Get.snackbar(
+          'Payment Failed',
+          e.toString().contains('cancelled') 
+            ? 'Payment was cancelled' 
+            : 'Payment failed. Please try again.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
       
       return false;
     }

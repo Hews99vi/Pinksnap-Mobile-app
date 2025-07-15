@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/stripe_service.dart';
+import '../utils/logger.dart';
 import '../services/demo_payment_service.dart';
 import '../models/cart_item.dart';
 import '../models/order.dart';
@@ -96,6 +97,9 @@ class PaymentController extends GetxController {
 
         paymentIntentId.value = paymentIntent['id'];
 
+        // Store context reference before async operation
+        if (!context.mounted) return false;
+
         // Process the payment
         bool success = await _stripeService.processPayment(
           paymentIntentClientSecret: paymentIntent['client_secret'],
@@ -104,19 +108,21 @@ class PaymentController extends GetxController {
 
         if (success) {
           paymentSuccess.value = true;
-          Get.snackbar(
-            'Payment Successful',
-            'Your payment has been processed successfully!',
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
+          if (context.mounted) {
+            Get.snackbar(
+              'Payment Successful',
+              'Your payment has been processed successfully!',
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+          }
         }
 
         return success;
       }
     } catch (e) {
-      print('Payment error: $e');
+      Logger.error('Payment error: $e', error: e);
       Get.snackbar(
         'Payment Failed',
         'Failed to process payment: ${e.toString()}',

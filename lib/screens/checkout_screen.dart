@@ -7,6 +7,7 @@ import '../models/order.dart';
 import '../models/shipping_address.dart' as user_shipping;
 import 'payment_method_screen.dart';
 import 'shipping_address_screen.dart';
+import '../utils/logger.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -562,17 +563,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    print('DEBUG: Navigating to payment method screen');
+    Logger.debug('Navigating to payment method screen');
     
     // Navigate to payment method screen
     Get.to(() => PaymentMethodScreen(
       totalAmount: cartController.totalAmount,
       onPaymentSuccess: () {
-        print('DEBUG: Payment successful, creating order');
+        Logger.debug('Payment successful, creating order');
         _createOrderAfterPayment(cartController);
       },
       onPaymentCancel: () {
-        print('DEBUG: Payment cancelled');
+        Logger.debug('Payment cancelled');
         Get.back(); // Just go back to checkout screen
       },
     ));
@@ -594,7 +595,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         zipCode: _zipCodeController.text,
       );
 
-      print('DEBUG: Creating order after successful payment');
+      Logger.debug('Creating order after successful payment');
       final orderId = await orderController.createOrder(
         userId: authController.currentUser?.id ?? 'guest',
         customerName: _fullNameController.text,
@@ -607,10 +608,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Clear the cart after successful order
       cartController.clearCart();
 
-      print('DEBUG: Order created successfully: $orderId');
+      Logger.debug('Order created successfully: $orderId');
       _showOrderSuccessDialog(orderId);
     } catch (e) {
-      print('DEBUG: Error creating order: $e');
+      Logger.error('Error creating order: $e', error: e);
       Get.snackbar(
         'Error',
         'Failed to place order: $e',
