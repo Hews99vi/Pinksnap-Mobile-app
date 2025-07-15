@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 
@@ -125,6 +126,82 @@ class FirebaseDbService {
     }
   }
 
+  // Add a new category
+  static Future<void> addCategory(String categoryName) async {
+    try {
+      await _firestore
+          .collection(_categoriesCollection)
+          .doc(categoryName.toLowerCase().replaceAll(' ', '_'))
+          .set({
+        'name': categoryName,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to add category: $e');
+    }
+  }
+
+  // Update a category
+  static Future<void> updateCategory(String oldName, String newName) async {
+    try {
+      // Create new category document
+      await _firestore
+          .collection(_categoriesCollection)
+          .doc(newName.toLowerCase().replaceAll(' ', '_'))
+          .set({
+        'name': newName,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Delete old category document
+      await _firestore
+          .collection(_categoriesCollection)
+          .doc(oldName.toLowerCase().replaceAll(' ', '_'))
+          .delete();
+
+      // Update all products with old category to new category
+      QuerySnapshot products = await _firestore
+          .collection(_productsCollection)
+          .where('category', isEqualTo: oldName)
+          .get();
+
+      WriteBatch batch = _firestore.batch();
+      for (QueryDocumentSnapshot product in products.docs) {
+        batch.update(product.reference, {'category': newName});
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to update category: $e');
+    }
+  }
+
+  // Delete a category
+  static Future<void> deleteCategory(String categoryName) async {
+    try {
+      await _firestore
+          .collection(_categoriesCollection)
+          .doc(categoryName.toLowerCase().replaceAll(' ', '_'))
+          .delete();
+    } catch (e) {
+      throw Exception('Failed to delete category: $e');
+    }
+  }
+
+  // Check if category has products
+  static Future<bool> categoryHasProducts(String categoryName) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection(_productsCollection)
+          .where('category', isEqualTo: categoryName)
+          .limit(1)
+          .get();
+
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      throw Exception('Failed to check category products: $e');
+    }
+  }
+
   // ==== CART ====
 
   // Get user's cart
@@ -181,6 +258,7 @@ class FirebaseDbService {
   // Get user's wishlist
   static Future<List<String>> getUserWishlist(String userId) async {
     try {
+      debugPrint('FirebaseDbService: Getting wishlist for user: $userId');
       DocumentSnapshot wishlistDoc = await _firestore
           .collection(_wishlistsCollection)
           .doc(userId)
@@ -188,10 +266,15 @@ class FirebaseDbService {
 
       if (wishlistDoc.exists) {
         Map<String, dynamic> wishlistData = wishlistDoc.data() as Map<String, dynamic>;
-        return List<String>.from(wishlistData['productIds'] ?? []);
+        List<String> productIds = List<String>.from(wishlistData['productIds'] ?? []);
+        debugPrint('FirebaseDbService: Found wishlist document with ${productIds.length} items: $productIds');
+        return productIds;
+      } else {
+        debugPrint('FirebaseDbService: No wishlist document found for user: $userId');
+        return [];
       }
-      return [];
     } catch (e) {
+      debugPrint('FirebaseDbService: Error getting wishlist for user $userId: $e');
       throw Exception('Failed to get wishlist: $e');
     }
   }
@@ -199,6 +282,7 @@ class FirebaseDbService {
   // Add to wishlist
   static Future<void> addToWishlist(String userId, String productId) async {
     try {
+      debugPrint('FirebaseDbService: Adding product $productId to wishlist for user: $userId');
       await _firestore
           .collection(_wishlistsCollection)
           .doc(userId)
@@ -206,7 +290,9 @@ class FirebaseDbService {
             'productIds': FieldValue.arrayUnion([productId]),
             'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
+      debugPrint('FirebaseDbService: Successfully added product $productId to wishlist for user: $userId');
     } catch (e) {
+      debugPrint('FirebaseDbService: Error adding to wishlist for user $userId: $e');
       throw Exception('Failed to add to wishlist: $e');
     }
   }
@@ -214,6 +300,7 @@ class FirebaseDbService {
   // Remove from wishlist
   static Future<void> removeFromWishlist(String userId, String productId) async {
     try {
+      debugPrint('FirebaseDbService: Removing product $productId from wishlist for user: $userId');
       await _firestore
           .collection(_wishlistsCollection)
           .doc(userId)
@@ -221,7 +308,9 @@ class FirebaseDbService {
             'productIds': FieldValue.arrayRemove([productId]),
             'updatedAt': FieldValue.serverTimestamp(),
           });
+      debugPrint('FirebaseDbService: Successfully removed product $productId from wishlist for user: $userId');
     } catch (e) {
+      debugPrint('FirebaseDbService: Error removing from wishlist for user $userId: $e');
       throw Exception('Failed to remove from wishlist: $e');
     }
   }

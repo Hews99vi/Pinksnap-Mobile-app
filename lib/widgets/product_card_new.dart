@@ -33,12 +33,11 @@ class ProductCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image
-            AspectRatio(
-              aspectRatio: 1.0,
+            Expanded(
+              flex: 3,
               child: Stack(
                 children: [
                   Container(
@@ -118,11 +117,13 @@ class ProductCard extends StatelessWidget {
             ),
             
             // Product Details
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     // Product Name
                     Text(
                       product.name,
@@ -147,6 +148,7 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
             ),
           ],
         ),

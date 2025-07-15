@@ -41,6 +41,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () {
+              final ProductController productController = Get.find<ProductController>();
+              productController.debugWishlistState();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
               final ProductController productController = Get.find<ProductController>();

@@ -12,6 +12,7 @@ import '../controllers/cart_controller.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
 import 'image_search_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -133,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement text search
+                    Get.to(() => const SearchScreen());
                   },
                 ),
               ),

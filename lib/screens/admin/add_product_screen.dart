@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
+import '../../controllers/category_controller.dart';
 import '../../models/product.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -17,14 +18,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _imageUrlController = TextEditingController();
 
   final ProductController productController = Get.find();
+  final CategoryController categoryController = Get.put(CategoryController());
 
   final List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL'];
   final Map<String, TextEditingController> _stockControllers = {};
   final List<String> _selectedSizes = [];
+  String? _selectedCategory;
 
   bool get isEditing => widget.product != null;
 
@@ -48,7 +50,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _nameController.text = product.name;
     _descriptionController.text = product.description;
     _priceController.text = product.price.toString();
-    _categoryController.text = product.category;
+    _selectedCategory = product.category;
     _imageUrlController.text = product.images.isNotEmpty ? product.images.first : '';
     
     _selectedSizes.addAll(product.sizes);
@@ -63,7 +65,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
-    _categoryController.dispose();
     _imageUrlController.dispose();
     for (var controller in _stockControllers.values) {
       controller.dispose();
@@ -75,6 +76,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSizes.isEmpty) {
       Get.snackbar('Error', 'Please select at least one size');
+      return;
+    }
+    if (_selectedCategory == null || _selectedCategory!.isEmpty) {
+      Get.snackbar('Error', 'Please select a category');
       return;
     }
 
@@ -90,7 +95,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       description: _descriptionController.text.trim(),
       price: double.parse(_priceController.text),
       images: _imageUrlController.text.isNotEmpty ? [_imageUrlController.text] : [],
-      category: _categoryController.text.trim(),
+      category: _selectedCategory!,
       sizes: _selectedSizes,
       stock: stock,
       rating: isEditing ? widget.product!.rating : 0.0,
@@ -177,19 +182,75 @@ class _AddProductScreenState extends State<AddProductScreen> {
             const SizedBox(height: 16),
 
             // Category
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter category';
-                }
-                return null;
-              },
-            ),
+            Obx(() {
+              if (categoryController.categories.isEmpty) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Category',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info, color: Colors.orange[600]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'No categories available. Please create categories first.',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Navigate to category management
+                              Get.toNamed('/admin/categories');
+                            },
+                            child: const Text('Add Categories'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+                hint: const Text('Select a category'),
+                items: categoryController.categories.map((category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              );
+            }),
             const SizedBox(height: 16),
 
             // Image URL

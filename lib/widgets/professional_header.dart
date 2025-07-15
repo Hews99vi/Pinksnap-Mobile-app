@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../screens/search_screen.dart';
 
 class ProfessionalHeader extends StatelessWidget implements PreferredSizeWidget {
   const ProfessionalHeader({super.key});
@@ -88,7 +90,7 @@ class ProfessionalHeader extends StatelessWidget implements PreferredSizeWidget 
               ),
             ),
             onPressed: () {
-              // TODO: Implement search
+              Get.to(() => const SearchScreen());
             },
           ),
         ),

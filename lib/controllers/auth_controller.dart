@@ -12,6 +12,7 @@ class AuthController extends GetxController {
   final RxBool _isLoading = false.obs;
   
   User? get currentUser => _currentUser.value;
+  Rx<User?> get currentUserRx => _currentUser; // Expose the reactive user
   bool get isLoading => _isLoading.value;
   bool get isLoggedIn => _currentUser.value != null;
   bool get isAdmin => _currentUser.value?.role == UserRole.admin;
@@ -27,11 +28,16 @@ class AuthController extends GetxController {
   void _initializeAuthListener() {
     // Listen to Firebase auth state changes
     FirebaseAuthService.authStateChanges.listen((firebase_auth.User? firebaseUser) async {
+      debugPrint('=== AUTH STATE CHANGE ===');
+      debugPrint('Firebase user: ${firebaseUser?.email ?? 'None'}');
+      debugPrint('Firebase user UID: ${firebaseUser?.uid ?? 'None'}');
+      
       if (firebaseUser != null) {
         // User is signed in, get user data from Firestore
         try {
           User? userData = await FirebaseAuthService.getUserData(firebaseUser.uid);
           if (userData != null) {
+            debugPrint('Setting current user: ${userData.email} (ID: ${userData.id})');
             _currentUser.value = userData;
             await _storage.write(key: 'user_data', value: userData.toJson().toString());
           }
@@ -40,9 +46,12 @@ class AuthController extends GetxController {
         }
       } else {
         // User is signed out
+        debugPrint('User signed out - clearing current user data');
         _currentUser.value = null;
         await _storage.delete(key: 'user_data');
       }
+      debugPrint('Current user after change: ${_currentUser.value?.email ?? 'None'}');
+      debugPrint('========================');
     });
   }
   

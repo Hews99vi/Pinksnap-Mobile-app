@@ -4,6 +4,7 @@ import '../../controllers/product_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/auth_controller.dart';
 import 'admin_orders_screen.dart';
+import 'category_management_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -117,6 +118,25 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: const Icon(Icons.list_alt),
                   label: const Text('View Orders'),
                   style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.to(() => const CategoryManagementScreen());
+                  },
+                  icon: const Icon(Icons.category),
+                  label: const Text('Manage Categories'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),

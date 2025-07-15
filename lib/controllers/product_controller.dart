@@ -2,8 +2,10 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
+import '../models/user.dart';
 import '../services/firebase_db_service.dart';
 import 'auth_controller.dart';
+import 'category_controller.dart';
 
 class ProductController extends GetxController {
   static ProductController get instance => Get.find();
@@ -48,11 +50,14 @@ class ProductController extends GetxController {
     }
     
     // Listen to auth state changes to load user-specific data
-    ever(authController.currentUser.obs, (user) {
+    ever(authController.currentUserRx, (User? user) {
+      debugPrint('Auth state changed - User: ${user?.email ?? 'None'}');
       if (user != null) {
+        debugPrint('Loading user data for: ${user.email}');
         loadUserCart();
         loadUserWishlist();
       } else {
+        debugPrint('User signed out - clearing cart and wishlist');
         _cartItems.clear();
         _wishlistIds.clear();
       }
@@ -105,7 +110,16 @@ class ProductController extends GetxController {
       
       _products.add(newProduct);
       
-      Get.snackbar('Success', 'Product added successfully!');
+      // Refresh categories if a category controller exists
+      try {
+        if (Get.isRegistered<CategoryController>()) {
+          Get.find<CategoryController>().loadCategories();
+        }
+      } catch (e) {
+        debugPrint('Category controller not found, skipping refresh');
+      }
+      
+      Get.snackbar('Success', 'Product added successfully');
       return true;
     } catch (e) {
       debugPrint('Error adding product: $e');
@@ -115,7 +129,7 @@ class ProductController extends GetxController {
       _isLoading.value = false;
     }
   }
-  
+        
   Future<bool> updateProduct(Product product) async {
     try {
       _isLoading.value = true;
@@ -258,19 +272,21 @@ class ProductController extends GetxController {
     final authController = Get.find<AuthController>();
     if (authController.currentUser == null) {
       debugPrint('No user logged in, cannot load wishlist');
+      _wishlistIds.clear(); // Ensure wishlist is cleared when no user
       return;
     }
     
     try {
-      debugPrint('Loading wishlist for user: ${authController.currentUser!.id}');
+      debugPrint('Loading wishlist for user: ${authController.currentUser!.id} (${authController.currentUser!.email})');
       List<String> wishlistIds = await FirebaseDbService.getUserWishlist(
         authController.currentUser!.id,
       );
-      debugPrint('Loaded wishlist IDs: $wishlistIds');
+      debugPrint('Loaded ${wishlistIds.length} wishlist IDs from Firestore: $wishlistIds');
       _wishlistIds.assignAll(wishlistIds);
-      debugPrint('Current wishlist in controller: $_wishlistIds');
+      debugPrint('Current wishlist in controller after loading: $_wishlistIds');
     } catch (e) {
       debugPrint('Error loading wishlist: $e');
+      _wishlistIds.clear(); // Clear wishlist on error
     }
   }
   
@@ -283,6 +299,7 @@ class ProductController extends GetxController {
     
     try {
       debugPrint('Toggling wishlist for product: $productId');
+      debugPrint('User: ${authController.currentUser!.id} (${authController.currentUser!.email})');
       debugPrint('Current wishlist before toggle: $_wishlistIds');
       
       if (_wishlistIds.contains(productId)) {
@@ -308,10 +325,28 @@ class ProductController extends GetxController {
     }
   }
   
+  /// Force refresh the current user's wishlist data
+  Future<void> refreshWishlist() async {
+    debugPrint('Force refreshing wishlist...');
+    await loadUserWishlist();
+  }
+
   bool isInWishlist(String productId) {
     return _wishlistIds.contains(productId);
   }
   
+  /// Debug method to check current user and wishlist state
+  void debugWishlistState() {
+    final authController = Get.find<AuthController>();
+    debugPrint('=== WISHLIST DEBUG STATE ===');
+    debugPrint('Current user: ${authController.currentUser?.email ?? 'None'}');
+    debugPrint('Current user ID: ${authController.currentUser?.id ?? 'None'}');
+    debugPrint('Wishlist IDs in controller: $_wishlistIds');
+    debugPrint('Wishlist products count: ${wishlistProducts.length}');
+    debugPrint('Total products loaded: ${_products.length}');
+    debugPrint('============================');
+  }
+
   // ==== UTILITY METHODS ====
   
   Product? getProductById(String id) {
