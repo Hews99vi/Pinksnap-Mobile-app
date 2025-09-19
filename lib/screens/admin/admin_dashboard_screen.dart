@@ -97,20 +97,6 @@ class AdminDashboardScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to add product screen
-                    Get.toNamed('/admin/add-product');
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Product'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Get.to(() => const AdminOrdersScreen());

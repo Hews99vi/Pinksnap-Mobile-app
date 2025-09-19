@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/search_controller.dart' as search_ctrl;
 import '../widgets/product_card.dart';
 import 'product_details_screen.dart';
+import '../utils/color_utils.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -145,28 +146,35 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       const SizedBox(height: 8),
                       Obx(() => Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: 8,
+                        runSpacing: 6,
                         children: searchController.availableCategories
-                            .map((category) => FilterChip(
-                                  label: Text(
-                                    category,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  selected: searchController.selectedCategory == category,
-                                  onSelected: (selected) {
+                            .map((category) => InkWell(
+                                  onTap: () {
                                     searchController.updateCategory(category);
                                   },
-                                  selectedColor: Colors.pink[100],
-                                  checkmarkColor: Colors.pink[600],
-                                  backgroundColor: Colors.grey[50],
-                                  side: BorderSide(
-                                    color: searchController.selectedCategory == category 
-                                        ? Colors.pink[600]! 
-                                        : Colors.grey[300]!,
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                    child: Chip(
+                                      label: Text(category),
+                                      labelStyle: TextStyle(
+                                        color: searchController.selectedCategory == category
+                                            ? Colors.white
+                                            : Colors.grey[700],
+                                        fontSize: 12,
+                                      ),
+                                      backgroundColor: searchController.selectedCategory == category
+                                          ? Colors.pink[400]
+                                          : Colors.grey[200],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    ),
                                   ),
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
                                 ))
                             .toList(),
                       )),
@@ -184,30 +192,122 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       const SizedBox(height: 8),
                       Obx(() => Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: 8,
+                        runSpacing: 6,
                         children: searchController.availableSizes
-                            .map((size) => FilterChip(
-                                  label: Text(
-                                    size,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  selected: searchController.selectedSize == size,
-                                  onSelected: (selected) {
+                            .map((size) => InkWell(
+                                  onTap: () {
                                     searchController.updateSize(size);
                                   },
-                                  selectedColor: Colors.pink[100],
-                                  checkmarkColor: Colors.pink[600],
-                                  backgroundColor: Colors.grey[50],
-                                  side: BorderSide(
-                                    color: searchController.selectedSize == size 
-                                        ? Colors.pink[600]! 
-                                        : Colors.grey[300]!,
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                    child: Chip(
+                                      label: Text(size),
+                                      labelStyle: TextStyle(
+                                        color: searchController.selectedSize == size
+                                            ? Colors.white
+                                            : Colors.grey[700],
+                                        fontSize: 12,
+                                      ),
+                                      backgroundColor: searchController.selectedSize == size
+                                          ? Colors.pink[400]
+                                          : Colors.grey[200],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    ),
                                   ),
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
                                 ))
                             .toList(),
+                      )),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Color Filter
+                      const Text(
+                        'Color',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Obx(() => Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          // All colors option
+                          InkWell(
+                            onTap: () {
+                              searchController.updateColor('All');
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                              child: Chip(
+                                label: const Text('All'),
+                                labelStyle: TextStyle(
+                                  color: searchController.selectedColor == 'All' 
+                                      ? Colors.white 
+                                      : Colors.grey[700],
+                                  fontSize: 12,
+                                ),
+                                backgroundColor: searchController.selectedColor == 'All' 
+                                    ? Colors.pink[400] 
+                                    : Colors.grey[200],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                              ),
+                            ),
+                          ),
+                          
+                          // Individual colors
+                          ...searchController.availableColors
+                              .where((color) => color != 'All')
+                              .map((color) {
+                                bool isSelected = searchController.selectedColor == color;
+                                Color displayColor = ColorUtils.getColorFromName(color);
+                                
+                                return InkWell(
+                                  onTap: () {
+                                    searchController.updateColor(color);
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                    child: Chip(
+                                      avatar: CircleAvatar(
+                                        backgroundColor: displayColor,
+                                        radius: 8,
+                                      ),
+                                      label: Text(color),
+                                      labelStyle: TextStyle(
+                                        color: isSelected ? Colors.white : Colors.grey[700],
+                                        fontSize: 12,
+                                      ),
+                                      backgroundColor: isSelected 
+                                          ? Colors.pink[400] 
+                                          : Colors.grey[200],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ],
                       )),
                       
                       const SizedBox(height: 20),

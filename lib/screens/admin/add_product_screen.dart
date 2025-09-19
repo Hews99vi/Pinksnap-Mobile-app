@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/category_controller.dart';
 import '../../models/product.dart';
+import '../../utils/color_utils.dart';
 
 class AddProductScreen extends StatefulWidget {
   final Product? product;
@@ -26,6 +27,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final List<String> _sizes = ['XS', 'S', 'M', 'L', 'XL'];
   final Map<String, TextEditingController> _stockControllers = {};
   final List<String> _selectedSizes = [];
+  final List<String> _selectedColors = [];
   String? _selectedCategory;
 
   bool get isEditing => widget.product != null;
@@ -54,11 +56,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _imageUrlController.text = product.images.isNotEmpty ? product.images.first : '';
     
     _selectedSizes.addAll(product.sizes);
+    _selectedColors.addAll(product.colors);
     
     for (String size in product.sizes) {
       _stockControllers[size]?.text = product.stock[size]?.toString() ?? '0';
     }
   }
+  
+  // Color utilities now moved to ColorUtils class
 
   @override
   void dispose() {
@@ -97,6 +102,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       images: _imageUrlController.text.isNotEmpty ? [_imageUrlController.text] : [],
       category: _selectedCategory!,
       sizes: _selectedSizes,
+      colors: _selectedColors,
       stock: stock,
       rating: isEditing ? widget.product!.rating : 0.0,
       reviewCount: isEditing ? widget.product!.reviewCount : 0,
@@ -287,6 +293,75 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       }
                     });
                   },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+
+            // Colors section
+            Text(
+              'Available Colors',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: ColorUtils.availableColors.map((colorName) {
+                final bool isSelected = _selectedColors.contains(colorName);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedColors.remove(colorName);
+                      } else {
+                        _selectedColors.add(colorName);
+                      }
+                    });
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        margin: const EdgeInsets.only(bottom: 4),
+                        decoration: BoxDecoration(
+                          color: ColorUtils.getColorFromName(colorName),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected 
+                                ? Theme.of(context).primaryColor 
+                                : colorName == 'White' ? Colors.grey[300]! : Colors.transparent,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color: ColorUtils.isDarkColor(colorName) ? Colors.white : Colors.black,
+                                size: 20,
+                              )
+                            : null,
+                      ),
+                      Text(
+                        colorName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               }).toList(),
             ),

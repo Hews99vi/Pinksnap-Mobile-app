@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/category_controller.dart';
+import '../utils/color_utils.dart';
 
 class SearchController extends GetxController {
   final ProductController productController = Get.find();
@@ -13,6 +14,7 @@ class SearchController extends GetxController {
   final RxString _searchQuery = ''.obs;
   final RxString _selectedCategory = 'All'.obs;
   final RxString _selectedSize = 'All'.obs;
+  final RxString _selectedColor = 'All'.obs;
   final Rx<RangeValues> _priceRange = const RangeValues(0, 1000).obs;
   final RxBool _showFilters = false.obs;
 
@@ -21,6 +23,7 @@ class SearchController extends GetxController {
   String get searchQuery => _searchQuery.value;
   String get selectedCategory => _selectedCategory.value;
   String get selectedSize => _selectedSize.value;
+  String get selectedColor => _selectedColor.value;
   RangeValues get priceRange => _priceRange.value;
   bool get showFilters => _showFilters.value;
 
@@ -38,6 +41,22 @@ class SearchController extends GetxController {
   }
   
   List<String> get availableSizes => ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  
+  List<String> get availableColors {
+    // Get all colors from ColorUtils that are used in products
+    Set<String> productColors = {};
+    for (var product in productController.products) {
+      productColors.addAll(product.colors);
+    }
+    
+    // If we have specific colors in products, show only those
+    if (productColors.isNotEmpty) {
+      return ['All', ...productColors.toList()..sort()];
+    }
+    
+    // Otherwise show all available colors from ColorUtils
+    return ['All', ...ColorUtils.availableColors];
+  }
 
   @override
   void onInit() {
@@ -97,6 +116,11 @@ class SearchController extends GetxController {
     _selectedSize.value = size;
     _applyFilters();
   }
+  
+  void updateColor(String color) {
+    _selectedColor.value = color;
+    _applyFilters();
+  }
 
   void updatePriceRange(RangeValues range) {
     _priceRange.value = range;
@@ -111,6 +135,7 @@ class SearchController extends GetxController {
     _searchQuery.value = '';
     _selectedCategory.value = 'All';
     _selectedSize.value = 'All';
+    _selectedColor.value = 'All';
     _initializeFilters();
     _applyFilters();
   }
@@ -131,12 +156,16 @@ class SearchController extends GetxController {
       // Size filter
       final matchesSize = _selectedSize.value == 'All' ||
           product.sizes.contains(_selectedSize.value);
+          
+      // Color filter
+      final matchesColor = _selectedColor.value == 'All' ||
+          product.colors.contains(_selectedColor.value);
 
       // Price filter
       final matchesPrice = product.price >= _priceRange.value.start &&
           product.price <= _priceRange.value.end;
 
-      return matchesSearch && matchesCategory && matchesSize && matchesPrice;
+      return matchesSearch && matchesCategory && matchesSize && matchesColor && matchesPrice;
     }).toList();
 
     _filteredProducts.assignAll(filtered);
