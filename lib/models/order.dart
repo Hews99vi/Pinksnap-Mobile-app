@@ -57,10 +57,14 @@ class Order {
           orElse: () => PaymentStatus.pending,
         ),
         createdAt: json['createdAt'] != null 
-            ? DateTime.parse(json['createdAt']) 
+            ? (json['createdAt'] is int 
+                ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'])
+                : DateTime.parse(json['createdAt'])) 
             : DateTime.now(),
         updatedAt: json['updatedAt'] != null 
-            ? DateTime.parse(json['updatedAt']) 
+            ? (json['updatedAt'] is int
+                ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt']) 
+                : DateTime.parse(json['updatedAt']))
             : null,
         trackingNumber: json['trackingNumber'],
         notes: json['notes'],

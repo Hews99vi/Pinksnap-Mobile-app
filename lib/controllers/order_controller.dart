@@ -55,13 +55,29 @@ class OrderController extends GetxController {
           .collection('orders')
           .get();
 
-      final orders = querySnapshot.docs
-          .map((doc) {
-            final data = Map<String, dynamic>.from(doc.data() as Map);
-            data['id'] = doc.id;
-            return Order.fromJson(data);
-          })
-          .toList();
+      final List<Order> orders = [];
+      
+      for (final doc in querySnapshot.docs) {
+        try {
+          final data = Map<String, dynamic>.from(doc.data() as Map);
+          data['id'] = doc.id;
+          
+          // Convert any integer timestamps to ISO8601 strings to ensure compatibility
+          if (data['createdAt'] is int) {
+            data['createdAt'] = DateTime.fromMillisecondsSinceEpoch(data['createdAt']).toIso8601String();
+          }
+          
+          if (data['updatedAt'] is int) {
+            data['updatedAt'] = DateTime.fromMillisecondsSinceEpoch(data['updatedAt']).toIso8601String();
+          }
+          
+          final order = Order.fromJson(data);
+          orders.add(order);
+        } catch (e) {
+          debugPrint('Error parsing order ${doc.id}: $e');
+          // Skip this order and continue with the next one
+        }
+      }
 
       // Sort locally by creation date
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -98,13 +114,29 @@ class OrderController extends GetxController {
         querySnapshot = await query.get();
       }
 
-      final orders = querySnapshot.docs
-          .map((doc) {
-            final data = Map<String, dynamic>.from(doc.data() as Map);
-            data['id'] = doc.id;
-            return Order.fromJson(data);
-          })
-          .toList();
+      final List<Order> orders = [];
+      
+      for (final doc in querySnapshot.docs) {
+        try {
+          final data = Map<String, dynamic>.from(doc.data() as Map);
+          data['id'] = doc.id;
+          
+          // Convert any integer timestamps to ISO8601 strings to ensure compatibility
+          if (data['createdAt'] is int) {
+            data['createdAt'] = DateTime.fromMillisecondsSinceEpoch(data['createdAt']).toIso8601String();
+          }
+          
+          if (data['updatedAt'] is int) {
+            data['updatedAt'] = DateTime.fromMillisecondsSinceEpoch(data['updatedAt']).toIso8601String();
+          }
+          
+          final order = Order.fromJson(data);
+          orders.add(order);
+        } catch (e) {
+          debugPrint('Error parsing user order ${doc.id}: $e');
+          // Skip this order and continue with the next one
+        }
+      }
 
       // Sort locally if we couldn't sort on the server
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -425,8 +457,8 @@ class OrderController extends GetxController {
             'country': 'Test Country',
             'phone': '+1234567890',
           },
-          'createdAt': DateTime.now().millisecondsSinceEpoch,
-          'estimatedDelivery': DateTime.now().add(const Duration(days: 5)).millisecondsSinceEpoch,
+          'createdAt': DateTime.now().toIso8601String(),
+          'estimatedDelivery': DateTime.now().add(const Duration(days: 5)).toIso8601String(),
         },
         {
           'userId': userId,
@@ -456,8 +488,8 @@ class OrderController extends GetxController {
             'country': 'Sample Country',
             'phone': '+0987654321',
           },
-          'createdAt': DateTime.now().subtract(const Duration(days: 3)).millisecondsSinceEpoch,
-          'estimatedDelivery': DateTime.now().add(const Duration(days: 2)).millisecondsSinceEpoch,
+          'createdAt': DateTime.now().subtract(const Duration(days: 3)).toIso8601String(),
+          'estimatedDelivery': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
         }
       ];
 
