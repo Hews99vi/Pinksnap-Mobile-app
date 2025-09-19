@@ -74,15 +74,36 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
         }
 
         if (_orderController.error.isNotEmpty) {
+          String errorMessage = _orderController.error;
+          bool isPermissionError = errorMessage.contains('permission-denied');
+          
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(
+                  isPermissionError ? Icons.security : Icons.error_outline,
+                  size: 64,
+                  color: Colors.red[400],
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  'Error: ${_orderController.error}',
+                  isPermissionError 
+                      ? 'You do not have permission to access this area'
+                      : 'Error: ${_orderController.error}',
                   style: const TextStyle(color: Colors.red),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 8),
+                if (isPermissionError)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'This section is only accessible to admin users. Please contact your administrator.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _orderController.loadOrders(),

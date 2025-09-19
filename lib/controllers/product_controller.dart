@@ -180,7 +180,21 @@ class ProductController extends GetxController {
       List<CartItem> cartItems = await FirebaseDbService.getUserCart(
         authController.currentUser!.id,
       );
-      _cartItems.assignAll(cartItems);
+      
+      // Fix for default "Classic White Blouse" appearing in all new user carts
+      // Check if there's only one item and it's the Classic White Blouse
+      if (cartItems.length == 1 && 
+          cartItems[0].productName == 'Classic White Blouse' &&
+          cartItems[0].price == 45.99) {
+        debugPrint('Detected default item in cart for new user. Clearing default item.');
+        // Clear the cart in Firebase
+        await FirebaseDbService.clearUserCart(authController.currentUser!.id);
+        // Clear local cart items
+        _cartItems.clear();
+      } else {
+        // Proceed normally with the loaded cart
+        _cartItems.assignAll(cartItems);
+      }
     } catch (e) {
       debugPrint('Error loading cart: $e');
     }

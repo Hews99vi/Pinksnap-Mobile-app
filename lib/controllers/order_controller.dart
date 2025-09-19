@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/order.dart';
 import '../models/cart_item.dart';
 
@@ -50,6 +51,25 @@ class OrderController extends GetxController {
     try {
       _isLoading.value = true;
       _error.value = '';
+
+      // Check if user is authenticated
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        _error.value = 'You must be logged in to view orders';
+        _isLoading.value = false;
+        return;
+      }
+
+      // Get user claims to check if admin
+      final idTokenResult = await currentUser.getIdTokenResult(true);
+      final isAdmin = idTokenResult.claims?['isAdmin'] == true;
+
+      // If not admin, try to get user orders instead of all orders
+      if (!isAdmin) {
+        debugPrint('Non-admin user attempting to load all orders. Loading user orders instead.');
+        await loadUserOrders(currentUser.uid);
+        return;
+      }
 
       final querySnapshot = await _firestore
           .collection('orders')
