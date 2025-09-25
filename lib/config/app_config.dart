@@ -3,8 +3,15 @@ class AppConfig {
   static const bool isDevelopment = true;
   static const bool isDemoMode = false; // Using real Stripe now
   
+  // Web Configuration
+  static const bool webEnabled = true;
+  static const String webAppName = 'PinkSnap';
+  static const String webAppDescription = 'Your favorite shopping destination';
+  static const String webBaseUrl = '/'; // Update this if your app is hosted in a subfolder
+  
   // Payment Configuration
   static const PaymentMode paymentMode = PaymentMode.stripeTest; // Using Stripe test mode
+  static const bool webPaymentsEnabled = false; // Set to true when implementing full web payment flow
   
   // Demo Settings
   static const bool showDemoWarnings = false; // Disabled since using real Stripe
@@ -36,6 +43,11 @@ class AppConfig {
   // Demo payment simulation settings
   static const Duration demoPaymentDelay = Duration(seconds: 2);
   static const double demoPaymentSuccessRate = 1.0; // 100% success rate for demo
+  
+  // Responsive design breakpoints
+  static const double mobileBreakpoint = 600;
+  static const double tabletBreakpoint = 900;
+  static const double desktopBreakpoint = 1200;
 }
 
 enum PaymentMode {

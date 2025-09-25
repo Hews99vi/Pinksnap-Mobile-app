@@ -13,6 +13,7 @@ import 'services/stripe_service.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'utils/logger.dart';
+import 'screens/web_responsive_example.dart';
 
 void main() async {
   runZonedGuarded(() async {
@@ -130,6 +131,9 @@ class _PinkSnapAppState extends State<PinkSnapApp> {
           : (_errorMessage.isNotEmpty 
               ? _ErrorScreen(errorMessage: _errorMessage) 
               : const LoginScreen()),
+      routes: {
+        '/web-example': (context) => const WebResponsiveExample(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

@@ -208,11 +208,26 @@ class DesignerCategoriesSection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              category['description'],
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.pink[700],
-                                height: 1.5,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                category['description'],
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.pink[900],
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.5,
+                                ),
                               ),
                             ),
                           ],

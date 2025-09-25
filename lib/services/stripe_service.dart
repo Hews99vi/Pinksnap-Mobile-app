@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../config/app_config.dart';
 import '../utils/logger.dart';
+import 'web_stripe_service.dart';
+
+// Use conditional import to handle flutter_stripe
+// This way flutter_stripe is only imported on non-web platforms
+import 'package:flutter_stripe/flutter_stripe.dart' if (dart.library.html) './stripe_stub.dart';
 
 class StripeService {
   static final StripeService _instance = StripeService._internal();
@@ -9,10 +14,19 @@ class StripeService {
   StripeService._internal();
 
   void init() {
-    // Only use the publishable key on client side (this is secure)
-    Stripe.publishableKey = AppConfig.stripePublishableKey;
-    
-    Logger.debug('Stripe initialized with publishable key: ${AppConfig.stripePublishableKey.substring(0, 20)}...');
+    if (kIsWeb) {
+      // Use web implementation
+      Logger.debug('Initializing Stripe for web');
+      WebStripeService().init(publishableKey: AppConfig.stripePublishableKey);
+    } else {
+      // Use mobile implementation - only initialize Stripe on non-web platforms
+      try {
+        Stripe.publishableKey = AppConfig.stripePublishableKey;
+        Logger.debug('Stripe initialized with publishable key: ${AppConfig.stripePublishableKey.substring(0, 20)}...');
+      } catch (e) {
+        Logger.error('Error initializing Stripe: $e', error: e);
+      }
+    }
   }
 
   // IMPORTANT: In a real production app, you would have a backend server that:
