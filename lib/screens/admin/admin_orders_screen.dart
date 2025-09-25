@@ -4,7 +4,6 @@ import '../../controllers/order_controller.dart';
 import '../../models/order.dart';
 import 'order_status_update_screen.dart';
 import '../../utils/app_bar_utils.dart';
-import '../../utils/color_extension.dart';
 
 class DateFormatter {
   static String formatDate(DateTime date) {

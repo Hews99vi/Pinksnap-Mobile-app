@@ -60,49 +60,78 @@ class OrderController extends GetxController {
         return;
       }
 
-      // Get user claims to check if admin
-      final idTokenResult = await currentUser.getIdTokenResult(true);
-      final isAdmin = idTokenResult.claims?['isAdmin'] == true;
-
-      // If not admin, try to get user orders instead of all orders
-      if (!isAdmin) {
-        debugPrint('Non-admin user attempting to load all orders. Loading user orders instead.');
-        await loadUserOrders(currentUser.uid);
-        return;
-      }
-
-      final querySnapshot = await _firestore
-          .collection('orders')
-          .get();
-
-      final List<Order> orders = [];
-      
-      for (final doc in querySnapshot.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data() as Map);
-          data['id'] = doc.id;
-          
-          // Convert any integer timestamps to ISO8601 strings to ensure compatibility
-          if (data['createdAt'] is int) {
-            data['createdAt'] = DateTime.fromMillisecondsSinceEpoch(data['createdAt']).toIso8601String();
-          }
-          
-          if (data['updatedAt'] is int) {
-            data['updatedAt'] = DateTime.fromMillisecondsSinceEpoch(data['updatedAt']).toIso8601String();
-          }
-          
-          final order = Order.fromJson(data);
-          orders.add(order);
-        } catch (e) {
-          debugPrint('Error parsing order ${doc.id}: $e');
-          // Skip this order and continue with the next one
+      // Check if the user is an admin by getting user data from Firestore
+      try {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+        
+        bool isAdmin = false;
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          isAdmin = userData['role'] == 'admin';
         }
+
+        // Log admin status for debugging
+        debugPrint('User ${currentUser.uid} is admin: $isAdmin');
+
+        // If not admin, try to get user orders instead of all orders
+        if (!isAdmin) {
+          debugPrint('Non-admin user attempting to load all orders. Loading user orders instead.');
+          await loadUserOrders(currentUser.uid);
+          return;
+        }
+
+        // Admin user - proceed to get all orders
+        debugPrint('Admin user confirmed. Loading all orders.');
+        final querySnapshot = await _firestore
+            .collection('orders')
+            .orderBy('createdAt', descending: true)
+            .get();
+
+        final List<Order> orders = [];
+        
+        for (final doc in querySnapshot.docs) {
+          try {
+            final data = Map<String, dynamic>.from(doc.data() as Map);
+            data['id'] = doc.id;
+            
+            // Convert any integer timestamps to ISO8601 strings to ensure compatibility
+            if (data['createdAt'] is int) {
+              data['createdAt'] = DateTime.fromMillisecondsSinceEpoch(data['createdAt']).toIso8601String();
+            } else if (data['createdAt'] is firestore.Timestamp) {
+              data['createdAt'] = (data['createdAt'] as firestore.Timestamp).toDate().toIso8601String();
+            }
+            
+            if (data['updatedAt'] is int) {
+              data['updatedAt'] = DateTime.fromMillisecondsSinceEpoch(data['updatedAt']).toIso8601String();
+            } else if (data['updatedAt'] is firestore.Timestamp) {
+              data['updatedAt'] = (data['updatedAt'] as firestore.Timestamp).toDate().toIso8601String();
+            }
+            
+            final order = Order.fromJson(data);
+            orders.add(order);
+            debugPrint('Loaded order ${order.id} for admin view');
+          } catch (e) {
+            debugPrint('Error parsing order ${doc.id}: $e');
+            // Skip this order and continue with the next one
+          }
+        }
+
+        debugPrint('Successfully loaded ${orders.length} orders for admin');
+
+        // Sort locally by creation date
+        orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        _orders.value = orders;
+        
+      } catch (e) {
+        _error.value = 'Failed to verify admin status: $e';
+        debugPrint('Error checking admin status: $e');
+        _isLoading.value = false;
       }
-
-      // Sort locally by creation date
-      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      _orders.value = orders;
+      
     } catch (e) {
       _error.value = 'Failed to load orders: $e';
       debugPrint('Error loading orders: $e');
@@ -144,10 +173,14 @@ class OrderController extends GetxController {
           // Convert any integer timestamps to ISO8601 strings to ensure compatibility
           if (data['createdAt'] is int) {
             data['createdAt'] = DateTime.fromMillisecondsSinceEpoch(data['createdAt']).toIso8601String();
+          } else if (data['createdAt'] is firestore.Timestamp) {
+            data['createdAt'] = (data['createdAt'] as firestore.Timestamp).toDate().toIso8601String();
           }
           
           if (data['updatedAt'] is int) {
             data['updatedAt'] = DateTime.fromMillisecondsSinceEpoch(data['updatedAt']).toIso8601String();
+          } else if (data['updatedAt'] is firestore.Timestamp) {
+            data['updatedAt'] = (data['updatedAt'] as firestore.Timestamp).toDate().toIso8601String();
           }
           
           final order = Order.fromJson(data);

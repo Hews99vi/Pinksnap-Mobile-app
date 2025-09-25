@@ -302,15 +302,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                       ),
                                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                   ),
-                                );
-                              }).toList(),
-                        ],
-                      )),
-                      
-                      const SizedBox(height: 20),
+                                ),
+                              );
+                            }),
+                      ],
+                    )),                      const SizedBox(height: 20),
                       
                       // Price Range Filter
                       const Text(

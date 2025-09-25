@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/auth_controller.dart';
-import '../../utils/color_extension.dart';
 import 'admin_orders_screen.dart';
 import 'category_management_screen.dart';
 

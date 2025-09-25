@@ -13,7 +13,6 @@ import 'services/stripe_service.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'utils/logger.dart';
-import 'utils/color_extension.dart';
 
 void main() async {
   runZonedGuarded(() async {

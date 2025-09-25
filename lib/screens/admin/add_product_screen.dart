@@ -339,7 +339,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 26), // 0.1 * 255 ≈ 26
                               blurRadius: 2,
                               offset: const Offset(0, 1),
                             ),
