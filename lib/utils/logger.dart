@@ -20,4 +20,12 @@ class Logger {
   static void debug(String message, {String? name}) {
     developer.log(message, name: name ?? 'App');
   }
+
+  static void success(String message, {String? name}) {
+    developer.log('✓ $message', name: name ?? 'App');
+  }
+
+  static void warning(String message, {String? name}) {
+    developer.log('⚠ $message', name: name ?? 'App');
+  }
 }

@@ -5,15 +5,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/product.dart';
 import '../services/image_search_service.dart';
+import '../services/tflite_model_service.dart';
 
 class ImageSearchController extends GetxController {
   final ImagePicker _picker = ImagePicker();
   final ImageSearchService _imageSearchService = ImageSearchService();
+  final TFLiteModelService _tfliteService = TFLiteModelService();
   
   var isLoading = false.obs;
   var selectedImage = Rx<File?>(null);
   var searchResults = <Product>[].obs;
   var searchHistory = <File>[].obs;
+  var predictions = <Map<String, dynamic>>[].obs;
+  var showPredictions = false.obs;
   
   // Mock data for demonstration - replace with actual ML model results
   var mockSearchResults = <Product>[].obs;
@@ -22,20 +26,58 @@ class ImageSearchController extends GetxController {
   void onInit() {
     super.onInit();
     _loadSearchHistory();
+    _initializeModel();
+  }
+
+  @override
+  void onClose() {
+    _tfliteService.dispose();
+    super.onClose();
+  }
+
+  Future<void> _initializeModel() async {
+    try {
+      await _tfliteService.loadModel();
+    } catch (e) {
+      Get.snackbar(
+        'Model Error',
+        'Failed to load ML model: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Future<void> pickImageFromGallery() async {
     try {
-      // Request permission
-      final status = await Permission.storage.request();
-      if (status.isDenied) {
+      // Request permission based on Android version
+      // For Android 13+ (API 33+), use photos permission
+      // For older versions, use storage permission
+      PermissionStatus status;
+      
+      if (await _isAndroid13OrAbove()) {
+        status = await Permission.photos.request();
+      } else {
+        status = await Permission.storage.request();
+      }
+      
+      if (status.isDenied || status.isPermanentlyDenied) {
         Get.snackbar(
           'Permission Denied',
-          'Please allow gallery access to select images',
+          status.isPermanentlyDenied 
+            ? 'Please enable gallery access in Settings'
+            : 'Please allow gallery access to select images',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          duration: const Duration(seconds: 4),
         );
+        
+        // If permanently denied, open app settings
+        if (status.isPermanentlyDenied) {
+          await openAppSettings();
+        }
         return;
       }
 
@@ -59,6 +101,20 @@ class ImageSearchController extends GetxController {
         colorText: Colors.white,
       );
     }
+  }
+
+  Future<bool> _isAndroid13OrAbove() async {
+    // Check if running on Android 13 (API 33) or above
+    try {
+      if (Platform.isAndroid) {
+        // We'll use a simple check - try photos permission first
+        await Permission.photos.status;
+        return true; // If photos permission exists, we're on Android 13+
+      }
+    } catch (e) {
+      return false; // If photos permission doesn't exist, we're on older Android
+    }
+    return false;
   }
 
   Future<void> pickImageFromCamera() async {
@@ -101,6 +157,8 @@ class ImageSearchController extends GetxController {
   Future<void> performImageSearch(File imageFile) async {
     try {
       isLoading.value = true;
+      showPredictions.value = false;
+      predictions.clear();
       
       // Add to search history
       searchHistory.insert(0, imageFile);
@@ -109,18 +167,45 @@ class ImageSearchController extends GetxController {
       }
       _saveSearchHistory();
       
+      // Get predictions from the model
+      if (_imageSearchService.lastPredictions != null) {
+        predictions.value = _imageSearchService.lastPredictions!;
+      }
+      
       // Perform image search using ML service
-      // For now, using mock data - replace with actual ML model
       final results = await _imageSearchService.searchSimilarProducts(imageFile);
+      
+      // Update predictions from the service
+      if (_imageSearchService.lastPredictions != null) {
+        predictions.value = _imageSearchService.lastPredictions!;
+        showPredictions.value = true;
+      }
+      
       searchResults.value = results;
       
-      Get.snackbar(
-        'Search Completed',
-        'Found ${results.length} similar products',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      // Show prediction summary
+      if (predictions.isNotEmpty) {
+        final topPrediction = predictions.first;
+        final label = topPrediction['label'] as String;
+        final confidence = topPrediction['confidence'] as double;
+        
+        Get.snackbar(
+          'Prediction',
+          'Detected: $label (${confidence.toStringAsFixed(1)}% confidence)\nFound ${results.length} similar products',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        Get.snackbar(
+          'Search Completed',
+          'Found ${results.length} similar products',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
       
     } catch (e) {
       Get.snackbar(
@@ -138,6 +223,8 @@ class ImageSearchController extends GetxController {
   void clearSearchResults() {
     searchResults.clear();
     selectedImage.value = null;
+    predictions.clear();
+    showPredictions.value = false;
   }
 
   void clearSearchHistory() {

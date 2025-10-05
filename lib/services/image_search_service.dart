@@ -3,31 +3,98 @@ import 'dart:io';
 // import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import '../controllers/product_controller.dart';
+import 'tflite_model_service.dart';
+import '../utils/logger.dart';
 import 'package:get/get.dart';
 
 class ImageSearchService {
   final String baseUrl = 'https://your-ml-api-endpoint.com'; // Replace with your ML API endpoint
   final ProductController _productController = Get.find<ProductController>();
+  final TFLiteModelService _tfliteService = TFLiteModelService();
+  
+  // Store the last predictions for display
+  List<Map<String, dynamic>>? lastPredictions;
   
   Future<List<Product>> searchSimilarProducts(File imageFile) async {
     try {
-      // For now, return mock data since ML model isn't implemented yet
-      // Later, you can replace this with actual API call to your ML service
+      Logger.info('Starting image search for similar products');
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
+      // Ensure model is loaded
+      if (!_tfliteService.isModelLoaded) {
+        Logger.info('Model not loaded, loading now...');
+        await _tfliteService.loadModel();
+      }
       
-      // Return mock similar products (random selection from existing products)
-      final allProducts = _productController.products;
-      if (allProducts.isEmpty) {
+      // Classify the image using TFLite model
+      final predictions = await _tfliteService.classifyImage(imageFile);
+      lastPredictions = predictions;
+      
+      if (predictions.isEmpty) {
+        Logger.warning('No predictions returned from model');
         return [];
       }
       
-      // Return random 5-8 products as "similar" results for demonstration
-      final shuffled = List.from(allProducts)..shuffle();
-      final resultCount = (5 + (shuffled.length * 0.1).round()).clamp(5, 8);
+      // Get the top prediction
+      final topPrediction = predictions.first;
+      final predictedCategory = topPrediction['label'] as String;
+      final confidence = topPrediction['confidence'] as double;
       
-      return shuffled.take(resultCount).cast<Product>().toList();
+      Logger.info('Top prediction: $predictedCategory (${confidence.toStringAsFixed(2)}%)');
+      
+      // Get all products
+      final allProducts = _productController.products;
+      if (allProducts.isEmpty) {
+        Logger.warning('No products available in database');
+        return [];
+      }
+      
+      // Filter products by predicted category (case-insensitive matching)
+      List<Product> matchingProducts = allProducts.where((product) {
+        // Check if product name or category matches the predicted label
+        final productName = product.name.toLowerCase();
+        final productCategory = product.category.toLowerCase();
+        final predictedLabel = predictedCategory.toLowerCase();
+        
+        return productName.contains(predictedLabel) || 
+               productCategory.contains(predictedLabel) ||
+               predictedLabel.contains(productCategory);
+      }).toList();
+      
+      Logger.info('Found ${matchingProducts.length} products matching category: $predictedCategory');
+      
+      // If we found matching products, return them
+      if (matchingProducts.isNotEmpty) {
+        // Shuffle to add variety and limit results
+        matchingProducts.shuffle();
+        return matchingProducts.take(10).toList();
+      }
+      
+      // If no exact matches, try to match with secondary predictions
+      for (var i = 1; i < predictions.length && i < 3; i++) {
+        final secondaryPrediction = predictions[i];
+        final secondaryCategory = secondaryPrediction['label'] as String;
+        
+        matchingProducts = allProducts.where((product) {
+          final productName = product.name.toLowerCase();
+          final productCategory = product.category.toLowerCase();
+          final predictedLabel = secondaryCategory.toLowerCase();
+          
+          return productName.contains(predictedLabel) || 
+                 productCategory.contains(predictedLabel) ||
+                 predictedLabel.contains(productCategory);
+        }).toList();
+        
+        if (matchingProducts.isNotEmpty) {
+          Logger.info('Found ${matchingProducts.length} products matching secondary category: $secondaryCategory');
+          matchingProducts.shuffle();
+          return matchingProducts.take(10).toList();
+        }
+      }
+      
+      // If still no matches, return random products as fallback
+      Logger.info('No matching products found, returning random selection');
+      final shuffled = List.from(allProducts)..shuffle();
+      return shuffled.take(8).cast<Product>().toList();
       
       /* 
       // Uncomment this when you have your ML API ready:

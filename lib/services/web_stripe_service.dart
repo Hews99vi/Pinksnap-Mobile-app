@@ -12,7 +12,7 @@ class WebStripeService {
   
   WebStripeService._internal();
   
-  bool _initialized = false;
+  static const bool _initialized = false;
   
   Future<void> init({String? publishableKey}) async {
     if (_initialized || !kIsWeb) return;

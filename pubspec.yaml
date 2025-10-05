@@ -27,6 +27,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  tflite_flutter: ^0.11.0  # TensorFlow Lite for Flutter (latest version)
+  image_picker: ^1.2.0  # For picking images from gallery/camera
+  image: ^4.0.17  # Image processing for TFLite
   get: ^4.6.6  # State management
   http: ^1.2.0  # API calls
   shared_preferences: ^2.2.2  # Local storage
@@ -45,8 +48,7 @@ dependencies:
   # Stripe Payment
   flutter_stripe: ^11.1.0
   dio: ^5.4.0  # For API calls to your backend
-  # Image handling
-  image_picker: ^1.0.7  # For picking images from gallery/camera
+  # Permissions
   permission_handler: ^11.3.0  # For handling permissions
 
 dev_dependencies:
@@ -68,6 +70,7 @@ flutter:
   uses-material-design: true
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/models/
     - assets/images/
     - assets/icons/
 

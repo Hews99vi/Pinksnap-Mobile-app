@@ -1,8 +1,6 @@
-// This file contains web-specific implementation using dart:js
+// This file contains web-specific implementation
 // It is only imported when running on web platforms
 
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
 import 'package:flutter/foundation.dart';
 
 /// Handles web-specific Stripe implementation
@@ -11,13 +9,10 @@ class WebStripeImpl {
     if (!kIsWeb) return;
     
     try {
-      if (js.context.hasProperty('Stripe')) {
-        final key = publishableKey ?? 'your_publishable_key';
-        js.context.callMethod('Stripe', [key]);
-        debugPrint('Web Stripe initialized with key');
-      } else {
-        debugPrint('Stripe.js not loaded');
-      }
+      // TODO: Implement proper dart:js_interop API usage
+      // The old dart:js API is deprecated. This needs to be updated
+      // to use the new dart:js_interop API with proper JSObject types
+      debugPrint('Web Stripe initialization pending dart:js_interop migration');
     } catch (e) {
       debugPrint('Error initializing Stripe for web: $e');
     }

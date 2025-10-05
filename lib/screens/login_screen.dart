@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
-import '../utils/responsive.dart';
 import 'main_screen.dart';
 import 'admin/admin_main_screen.dart';
 import 'signup_screen.dart';
@@ -76,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Expanded(
           flex: 3,
           child: Container(
-            color: Theme.of(context).primaryColor.withOpacity(0.9),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.9),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

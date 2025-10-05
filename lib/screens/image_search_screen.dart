@@ -150,6 +150,85 @@ class ImageSearchScreen extends StatelessWidget {
               ),
             ),
           ),
+          
+          // Predictions Section
+          Obx(() {
+            if (controller.showPredictions.value && controller.predictions.isNotEmpty) {
+              return Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lightbulb_outline, 
+                          color: Colors.white.withValues(alpha: 0.9), 
+                          size: 18
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'AI Predictions',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...controller.predictions.take(3).map((prediction) {
+                      final label = prediction['label'] as String;
+                      final confidence = prediction['confidence'] as double;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8, 
+                                vertical: 2
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getConfidenceColor(confidence),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${confidence.toStringAsFixed(1)}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -189,31 +268,79 @@ class ImageSearchScreen extends StatelessWidget {
     );
   }
 
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 70) {
+      return Colors.green;
+    } else if (confidence >= 40) {
+      return Colors.orange;
+    } else {
+      return Colors.red.withValues(alpha: 0.7);
+    }
+  }
+
   Widget _buildLoadingSection() {
     return Container(
       padding: const EdgeInsets.all(40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[600]!),
-            strokeWidth: 3,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[600]!),
+                  strokeWidth: 3,
+                ),
+              ),
+              Icon(
+                Icons.psychology,
+                size: 40,
+                color: Colors.pink[400],
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           Text(
-            'Searching for similar products...',
+            'AI is analyzing your image...',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'This may take a few seconds',
+            'Using machine learning to identify fashion items',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.pink[50],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_awesome, size: 16, color: Colors.pink[600]),
+                const SizedBox(width: 6),
+                Text(
+                  'Powered by TensorFlow Lite',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.pink[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -278,7 +405,11 @@ class ImageSearchScreen extends StatelessWidget {
         ),
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: 80, // Add bottom padding to avoid FAB and overflow
+            ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 0.75,

@@ -1,0 +1,10 @@
+0 Dress
+1 Hat
+2 Hoodie
+3 Pants
+4 Shirt
+5 Shoes
+6 Shorts
+7 Skirt
+8 Top
+9 T-Shirt
