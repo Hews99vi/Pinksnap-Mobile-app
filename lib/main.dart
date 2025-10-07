@@ -103,8 +103,8 @@ class _PinkSnapAppState extends State<PinkSnapApp> {
 
   Future<void> _initialize() async {
     try {
-      // Add a small delay to ensure everything is properly initialized
-      await Future.delayed(const Duration(seconds: 1));
+      // Minimal delay for web - everything is already initialized in main()
+      await Future.delayed(kIsWeb ? const Duration(milliseconds: 100) : const Duration(milliseconds: 500));
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -126,11 +126,16 @@ class _PinkSnapAppState extends State<PinkSnapApp> {
     return GetMaterialApp(
       title: 'PinkSnap',
       theme: AppTheme.lightTheme,
-      home: _isLoading 
-          ? const _LoadingScreen() 
-          : (_errorMessage.isNotEmpty 
+      // Skip internal loading screen on web - HTML handles it
+      home: kIsWeb
+          ? (_errorMessage.isNotEmpty 
               ? _ErrorScreen(errorMessage: _errorMessage) 
-              : const LoginScreen()),
+              : const LoginScreen())
+          : (_isLoading 
+              ? const _LoadingScreen() 
+              : (_errorMessage.isNotEmpty 
+                  ? _ErrorScreen(errorMessage: _errorMessage) 
+                  : const LoginScreen())),
       routes: {
         '/web-example': (context) => const WebResponsiveExample(),
       },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/search_controller.dart' as search_ctrl;
 import '../widgets/product_card.dart';
+import '../utils/responsive.dart';
 import 'product_details_screen.dart';
 import '../utils/color_utils.dart';
 
@@ -28,21 +29,47 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'Search Products',
+          'Search & Discover',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            fontSize: 20,
             color: Colors.black87,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        shadowColor: Colors.grey.withValues(alpha: 0.1),
         iconTheme: const IconThemeData(color: Colors.black87),
+        centerTitle: false,
         actions: [
+          Obx(() => Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: searchController.filteredProducts.isNotEmpty
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${searchController.filteredProducts.length} found',
+                        style: TextStyle(
+                          color: Colors.grey[800],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          )),
           Obx(() => IconButton(
             icon: Icon(
-              searchController.showFilters ? Icons.filter_list : Icons.filter_list_outlined,
+              searchController.showFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
               color: searchController.showFilters ? Colors.pink[600] : Colors.grey[600],
             ),
+            tooltip: 'Filters',
             onPressed: () => searchController.toggleFilters(),
           )),
         ],
@@ -52,28 +79,42 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             // Search Bar
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.pink.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) => searchController.updateSearchQuery(value),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.black87,
+                ),
                 decoration: InputDecoration(
-                  hintText: 'Search for products...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                  hintText: 'Search for dresses, tops, accessories...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: Colors.pink[400],
+                      size: 24,
+                    ),
+                  ),
                   suffixIcon: Obx(() => searchController.searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[400]),
+                          icon: Icon(Icons.clear_rounded, color: Colors.grey[400]),
                           onPressed: () {
                             _searchController.clear();
                             searchController.updateSearchQuery('');
@@ -82,8 +123,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       : const SizedBox()),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
+                    horizontal: 20,
+                    vertical: 18,
                   ),
                 ),
               ),
@@ -386,45 +427,72 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Obx(() {
                 if (searchController.filteredProducts.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No products found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.grey[200]!, Colors.grey[100]!],
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.search_off_rounded,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try adjusting your search or filters',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
+                          const SizedBox(height: 24),
+                          Text(
+                            'No Products Found',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try adjusting your search or filters\nto find what you\'re looking for',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.65,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: searchController.filteredProducts.length,
+                // Responsive grid with max-width constraint
+                final crossAxisCount = Responsive.value<int>(
+                  context: context,
+                  mobile: 2,
+                  tablet: 3,
+                  desktop: 4,
+                );
+                
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: Responsive.isDesktop(context) ? 1400.0 : double.infinity,
+                    ),
+                    child: GridView.builder(
+                      padding: EdgeInsets.all(Responsive.isDesktop(context) ? 20 : 16),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        childAspectRatio: 0.65,
+                        crossAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
+                        mainAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
+                      ),
+                      itemCount: searchController.filteredProducts.length,
                   itemBuilder: (context, index) {
                     final product = searchController.filteredProducts[index];
                     return GestureDetector(
@@ -439,7 +507,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     );
                   },
-                );
+                ),
+              ),
+            );
               }),
             ),
           ],

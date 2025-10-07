@@ -7,6 +7,7 @@
     "theme_color": "#FF69B4",
     "description": "PinkSnap - Your favorite shopping destination",
     "orientation": "any",
+    "display_override": ["window-controls-overlay", "standalone"],
     "prefer_related_applications": false,
     "icons": [
         {

@@ -9,6 +9,7 @@ import '../widgets/designer_categories_section.dart';
 import '../widgets/image_search_promo_card.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/cart_controller.dart';
+import '../utils/responsive.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
 import 'image_search_screen.dart';
@@ -47,10 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Constrain content width on desktop for better proportions
+    final maxWidth = Responsive.isDesktop(context) ? 1400.0 : double.infinity;
+    
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
             floating: true,
             backgroundColor: Colors.white,
             elevation: 0,
@@ -242,39 +249,99 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(
+                vertical: 20,
+                horizontal: Responsive.isDesktop(context) ? 0 : 0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Categories',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pink[900],
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.pink[400]!, Colors.pink[600]!],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Shop by Category',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 16),
                   SizedBox(
-                    height: 40,
+                    height: 44,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: categories.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemBuilder: (context, index) {
+                        final isSelected = _selectedCategoryIndex == index;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(categories[index]),
-                            selected: _selectedCategoryIndex == index,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() {
-                                  _selectedCategoryIndex = index;
-                                });
-                              }
-                            },
+                          padding: const EdgeInsets.only(right: 10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedCategoryIndex = index;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(24),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    gradient: isSelected
+                                        ? LinearGradient(
+                                            colors: [Colors.pink[400]!, Colors.pink[600]!],
+                                          )
+                                        : null,
+                                    color: isSelected ? null : Colors.white,
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: isSelected ? Colors.transparent : Colors.grey[300]!,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.pink[200]!.withValues(alpha: 0.4),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    categories[index],
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.grey[700],
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -284,22 +351,82 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          // Products Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.pink[400]!, Colors.pink[600]!],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _selectedCategoryIndex == 0
+                            ? 'All Products'
+                            : categories[_selectedCategoryIndex],
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Obx(() => Text(
+                    '${filteredProducts.length} items',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ),
           SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: Obx(() => SliverMasonryGrid.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childCount: filteredProducts.length,
-              itemBuilder: (context, index) {
-                return ProductCard(
-                  product: filteredProducts[index],
-                  onTap: () {
-                    Get.to(() => ProductDetailsScreen(product: filteredProducts[index]));
-                  },
-                );
-              },
-            )),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.isDesktop(context) ? 20 : 16,
+              vertical: 8,
+            ),
+            sliver: Obx(() {
+              // Responsive grid: more columns on larger screens
+              final crossAxisCount = Responsive.value<int>(
+                context: context,
+                mobile: 2,
+                tablet: 3,
+                desktop: 4,
+              );
+              
+              return SliverMasonryGrid.count(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
+                crossAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
+                childCount: filteredProducts.length,
+                itemBuilder: (context, index) {
+                  return ProductCard(
+                    product: filteredProducts[index],
+                    onTap: () {
+                      Get.to(() => ProductDetailsScreen(product: filteredProducts[index]));
+                    },
+                  );
+                },
+              );
+            }),
           ),
           const SliverToBoxAdapter(
             child: Padding(
@@ -308,6 +435,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

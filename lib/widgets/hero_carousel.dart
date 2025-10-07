@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import '../utils/responsive.dart';
 
 class HeroCarousel extends StatefulWidget {
   const HeroCarousel({super.key});
@@ -58,8 +60,16 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive height: smaller on desktop to avoid oversized images
+    final carouselHeight = Responsive.value(
+      context: context,
+      mobile: 400.0,
+      tablet: 350.0,
+      desktop: 300.0,
+    );
+    
     return SizedBox(
-      height: 400,
+      height: carouselHeight,
       child: Column(
         children: [
           Expanded(

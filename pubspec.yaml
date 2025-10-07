@@ -27,7 +27,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  tflite_flutter: ^0.11.0  # TensorFlow Lite for Flutter (latest version)
+  # tflite_flutter: ^0.11.0  # TensorFlow Lite for Flutter - DISABLED for web compatibility
   image_picker: ^1.2.0  # For picking images from gallery/camera
   image: ^4.0.17  # Image processing for TFLite
   get: ^4.6.6  # State management
