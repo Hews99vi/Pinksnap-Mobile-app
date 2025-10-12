@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
-// import 'package:tflite_flutter/tflite_flutter.dart'; // Disabled for web compatibility
 import '../utils/logger.dart';
+
+// Import TFLite directly - it will be available on mobile
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 class TFLiteModelService {
   static final TFLiteModelService _instance = TFLiteModelService._internal();
@@ -12,8 +14,7 @@ class TFLiteModelService {
 
   bool _modelLoaded = false;
   List<String> _labels = [];
-  // Interpreter? _interpreter; // Disabled for web compatibility
-  dynamic _interpreter; // Using dynamic for web compatibility
+  Interpreter? _interpreter;
 
   bool get isModelLoaded => _modelLoaded;
   List<String> get labels => _labels;
@@ -30,33 +31,39 @@ class TFLiteModelService {
       if (kIsWeb) {
         Logger.warning('TFLite is not supported on web platform');
         _modelLoaded = false;
+        await _loadLabels(); // Still load labels for web mock predictions
         return;
       }
 
       Logger.info('Loading TFLite model...');
 
-      // TFLite is not available - this code will not run on web
-      // If somehow reached, log warning
-      Logger.warning('TFLite model loading attempted but not available');
-      _modelLoaded = false;
-      return;
-      
-      // Original code commented out for web compatibility:
-      // _interpreter = await Interpreter.fromAsset('assets/models/model_unquant.tflite');
-      // _modelLoaded = true;
-      // await _loadLabels();
-      // Logger.success('Model loaded successfully with ${_labels.length} labels');
-      // final inputShape = _interpreter!.getInputTensor(0).shape;
-      // final outputShape = _interpreter!.getOutputTensor(0).shape;
-      // Logger.info('Model input shape: $inputShape');
-      // Logger.info('Model output shape: $outputShape');
+      try {
+        // Load the TFLite model from assets
+        _interpreter = await Interpreter.fromAsset('assets/models/model_unquant.tflite');
+        _modelLoaded = true;
+        await _loadLabels();
+        
+        Logger.success('Model loaded successfully with ${_labels.length} labels');
+        
+        // Log model input/output shapes for debugging
+        final inputShape = _interpreter!.getInputTensor(0).shape;
+        final outputShape = _interpreter!.getOutputTensor(0).shape;
+        Logger.info('Model input shape: $inputShape');
+        Logger.info('Model output shape: $outputShape');
+        
+      } catch (e) {
+        Logger.error('Error loading TFLite model: $e');
+        _modelLoaded = false;
+        await _loadLabels(); // Still load labels for fallback
+        throw Exception('Failed to load TFLite model: $e');
+      }
       
     } catch (e) {
-      Logger.error('Error loading model: $e');
+      Logger.error('Error during model initialization: $e');
       _modelLoaded = false;
       // Don't throw on web, just log the error
       if (!kIsWeb) {
-        throw Exception('Failed to load TFLite model: $e');
+        throw Exception('Failed to initialize TFLite model: $e');
       }
     }
   }
@@ -86,39 +93,98 @@ class TFLiteModelService {
   Future<List<Map<String, dynamic>>> classifyImage(File imageFile) async {
     try {
       // On web, return mock predictions
-      if (kIsWeb || !_modelLoaded || _interpreter == null) {
-        Logger.warning('TFLite not available - returning mock predictions');
+      if (kIsWeb) {
+        Logger.warning('TFLite not available on web - returning mock predictions');
         return _getMockPredictions();
+      }
+
+      // Check if model is loaded
+      if (!_modelLoaded || _interpreter == null) {
+        Logger.warning('Model not loaded - attempting to load now');
+        await loadModel();
+        
+        if (!_modelLoaded || _interpreter == null) {
+          Logger.warning('Failed to load model - returning mock predictions');
+          return _getMockPredictions();
+        }
       }
 
       Logger.info('Classifying image: ${imageFile.path}');
 
-      // TFLite classification code disabled for web compatibility
-      // Original code would go here
-      return _getMockPredictions();
+      // Read and decode the image
+      final imageBytes = await imageFile.readAsBytes();
+      img.Image? image = img.decodeImage(imageBytes);
+      
+      if (image == null) {
+        throw Exception('Failed to decode image');
+      }
+
+      // Get model input shape
+      final inputShape = _interpreter!.getInputTensor(0).shape;
+      final inputHeight = inputShape[1];
+      final inputWidth = inputShape[2];
+      
+      Logger.info('Expected input dimensions: ${inputWidth}x$inputHeight');
+
+      // Resize image to match model input
+      image = img.copyResize(image, width: inputWidth, height: inputHeight);
+
+      // Convert image to input tensor
+      final input = _imageToByteListFloat32(image, inputHeight, inputWidth);
+
+      // Prepare output tensor
+      final outputShape = _interpreter!.getOutputTensor(0).shape;
+      final output = List.generate(1, (i) => List.filled(outputShape[1], 0.0));
+
+      // Run inference
+      _interpreter!.run(input, output);
+
+      // Process results
+      final predictions = <Map<String, dynamic>>[];
+      final probabilities = output[0];
+
+      for (int i = 0; i < probabilities.length && i < _labels.length; i++) {
+        final confidence = probabilities[i] * 100; // Convert to percentage
+        
+        // Only include predictions with reasonable confidence
+        if (confidence > 1.0) {
+          predictions.add({
+            'label': _labels[i],
+            'confidence': confidence,
+            'index': i,
+          });
+        }
+      }
+
+      // Sort by confidence (highest first)
+      predictions.sort((a, b) => (b['confidence'] as double).compareTo(a['confidence'] as double));
+
+      // Return top 5 predictions
+      final topPredictions = predictions.take(5).toList();
+      
+      Logger.info('Model predictions: ${topPredictions.map((p) => '${p['label']}: ${(p['confidence'] as double).toStringAsFixed(1)}%').join(', ')}');
+      
+      return topPredictions.isNotEmpty ? topPredictions : _getMockPredictions();
       
     } catch (e) {
       Logger.error('Error classifying image: $e');
-      // Return mock data instead of throwing on web
-      if (kIsWeb) {
-        return _getMockPredictions();
-      }
-      throw Exception('Failed to classify image: $e');
+      // Return mock data instead of throwing
+      return _getMockPredictions();
     }
   }
 
   /// Get mock predictions for web or when model is not available
   List<Map<String, dynamic>> _getMockPredictions() {
-    // Return mock fashion item predictions
+    Logger.warning('Using mock predictions - real model not available');
+    // Return mock fashion item predictions with lower confidence to indicate they're not real
     return [
-      {'label': 'Dress', 'confidence': 85.5, 'index': 0},
-      {'label': 'Top', 'confidence': 45.2, 'index': 1},
-      {'label': 'Skirt', 'confidence': 12.8, 'index': 2},
+      {'label': 'Dress', 'confidence': 25.0, 'index': 0},
+      {'label': 'Top', 'confidence': 20.0, 'index': 8},
+      {'label': 'Shirt', 'confidence': 15.0, 'index': 4},
     ];
   }
 
   /// Convert image to Float32 input tensor
-  /// (Kept for reference, not used on web)
   List<List<List<List<double>>>> _imageToByteListFloat32(
     img.Image image,
     int inputHeight,

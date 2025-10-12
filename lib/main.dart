@@ -10,6 +10,7 @@ import 'controllers/cart_controller.dart';
 import 'controllers/order_controller.dart';
 import 'controllers/image_search_controller.dart';
 import 'services/stripe_service.dart';
+import 'services/tflite_model_service.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'utils/logger.dart';
@@ -64,6 +65,21 @@ void main() async {
       } catch (e) {
         Logger.error('Controller initialization failed', error: e);
         // Continue with minimal functionality
+      }
+      
+      // Initialize TFLite model (only on mobile platforms)
+      Logger.info('Initializing TFLite model');
+      try {
+        if (!kIsWeb) {
+          final modelService = TFLiteModelService();
+          await modelService.loadModel();
+          Logger.info('TFLite model initialized successfully');
+        } else {
+          Logger.info('Skipping TFLite model initialization on web');
+        }
+      } catch (e) {
+        Logger.error('TFLite model initialization failed', error: e);
+        // Continue without model - will use mock predictions
       }
       
       Logger.info('App initialization completed, running app');
