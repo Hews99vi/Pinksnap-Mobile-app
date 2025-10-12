@@ -100,15 +100,15 @@ class ProductCard extends StatelessWidget {
                           color: productController.isInWishlist(product.id)
                             ? Colors.red
                             : Colors.grey[600],
-                          size: 20,
+                          size: 18,
                         ),
                         onPressed: () {
                           productController.toggleWishlist(product.id);
                         },
                         padding: const EdgeInsets.all(4),
                         constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
+                          minWidth: 30,
+                          minHeight: 30,
                         ),
                       ),
                     )),
@@ -119,34 +119,35 @@ class ProductCard extends StatelessWidget {
             
             // Product Details
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                    // Product Name
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  // Product Name
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
-                    const SizedBox(height: 4),
-                    
-                    // Product Price
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pink[600],
-                      ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  
+                  // Product Price
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.pink[600],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

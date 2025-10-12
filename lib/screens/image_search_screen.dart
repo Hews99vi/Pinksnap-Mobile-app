@@ -392,12 +392,15 @@ class ImageSearchScreen extends StatelessWidget {
             children: [
               Icon(Icons.search, color: Colors.pink[600], size: 20),
               const SizedBox(width: 8),
-              Text(
-                'Similar Products (${controller.searchResults.length})',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+              Flexible(
+                child: Text(
+                  'Similar Products (${controller.searchResults.length})',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -408,11 +411,11 @@ class ImageSearchScreen extends StatelessWidget {
             padding: const EdgeInsets.only(
               left: 16,
               right: 16,
-              bottom: 80, // Add bottom padding to avoid FAB and overflow
+              bottom: 80, // Keep original padding for now
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.75,
+              childAspectRatio: 0.72, // Slightly reduced to give more height for content
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
