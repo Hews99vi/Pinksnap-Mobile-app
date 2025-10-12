@@ -5,7 +5,6 @@ import '../controllers/auth_controller.dart';
 import 'main_screen.dart';
 import 'admin/admin_main_screen.dart';
 import 'signup_screen.dart';
-import 'setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -253,34 +252,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
                   
-                  // Testing tools
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Get.to(() => const SetupScreen()),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          child: const Text('Setup Admin'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Get.toNamed('/web-example'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          child: const Text('Web Example'),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Testing tools (commented out for production)
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: ElevatedButton(
+                  //         onPressed: () => Get.to(() => const SetupScreen()),
+                  //         style: ElevatedButton.styleFrom(
+                  //           backgroundColor: Colors.purple,
+                  //           foregroundColor: Colors.white,
+                  //           padding: const EdgeInsets.symmetric(vertical: 8),
+                  //         ),
+                  //         child: const Text('Setup Admin'),
+                  //       ),
+                  //     ),
+                  //     const SizedBox(width: 8),
+                  //     Expanded(
+                  //       child: ElevatedButton(
+                  //         onPressed: () => Get.toNamed('/web-example'),
+                  //         style: ElevatedButton.styleFrom(
+                  //           backgroundColor: Colors.teal,
+                  //           foregroundColor: Colors.white,
+                  //           padding: const EdgeInsets.symmetric(vertical: 8),
+                  //         ),
+                  //         child: const Text('Web Example'),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -435,62 +434,63 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              
-              // Demo credentials info (for testing)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'For Testing:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create an account or contact admin to get admin access',
-                      style: TextStyle(color: Colors.blue.shade700),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Get.to(() => const SetupScreen()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            ),
-                            child: const Text('Setup Admin & Database'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Get.toNamed('/web-example'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            ),
-                            child: const Text('Web Example'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              // Testing section commented out for production
+              // const SizedBox(height: 16),
+              // 
+              // // Demo credentials info (for testing)
+              // Container(
+              //   padding: const EdgeInsets.all(16),
+              //   decoration: BoxDecoration(
+              //     color: Colors.blue.shade50,
+              //     borderRadius: BorderRadius.circular(8),
+              //     border: Border.all(color: Colors.blue.shade200),
+              //   ),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Text(
+              //         'For Testing:',
+              //         style: TextStyle(
+              //           fontWeight: FontWeight.bold,
+              //           color: Colors.blue.shade800,
+              //         ),
+              //       ),
+              //       const SizedBox(height: 8),
+              //       Text(
+              //         'Create an account or contact admin to get admin access',
+              //         style: TextStyle(color: Colors.blue.shade700),
+              //       ),
+              //       const SizedBox(height: 8),
+              //       Row(
+              //         children: [
+              //           Expanded(
+              //             child: ElevatedButton(
+              //               onPressed: () => Get.to(() => const SetupScreen()),
+              //               style: ElevatedButton.styleFrom(
+              //                 backgroundColor: Colors.purple,
+              //                 foregroundColor: Colors.white,
+              //                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              //               ),
+              //               child: const Text('Setup Admin & Database'),
+              //             ),
+              //           ),
+              //           const SizedBox(width: 8),
+              //           Expanded(
+              //             child: ElevatedButton(
+              //               onPressed: () => Get.toNamed('/web-example'),
+              //               style: ElevatedButton.styleFrom(
+              //                 backgroundColor: Colors.teal,
+              //                 foregroundColor: Colors.white,
+              //                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              //               ),
+              //               child: const Text('Web Example'),
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),
