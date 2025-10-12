@@ -36,35 +36,59 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
     return {
       'Dresses': {
         'icon': Icons.checkroom_rounded,
-        'gradient': [const Color(0xFFFF6B9D), const Color(0xFFFEC1CC)],
+        'gradient': [const Color(0xFFFF6B9D), const Color(0xFFFEC1CC)], // Pink
       },
       'Tops': {
         'icon': Icons.shopping_bag_rounded,
-        'gradient': [const Color(0xFF9C27B0), const Color(0xFFCE93D8)],
+        'gradient': [const Color(0xFF9C27B0), const Color(0xFFCE93D8)], // Purple
       },
       'Pants': {
         'icon': Icons.dry_cleaning_rounded,
-        'gradient': [const Color(0xFF2196F3), const Color(0xFF90CAF9)],
+        'gradient': [const Color(0xFF607D8B), const Color(0xFFB0BEC5)], // Blue-grey
       },
       'Skirts': {
         'icon': Icons.checkroom_outlined,
-        'gradient': [const Color(0xFFFF9800), const Color(0xFFFFCC80)],
+        'gradient': [const Color(0xFFFF9800), const Color(0xFFFFCC80)], // Orange
       },
       'Accessories': {
         'icon': Icons.diamond_rounded,
-        'gradient': [const Color(0xFF4CAF50), const Color(0xFFA5D6A7)],
+        'gradient': [const Color(0xFF795548), const Color(0xFFBCAAA4)], // Brown
       },
       'Shoes': {
         'icon': Icons.settings_accessibility_rounded,
-        'gradient': [const Color(0xFFE91E63), const Color(0xFFF48FB1)],
+        'gradient': [const Color(0xFFE91E63), const Color(0xFFF48FB1)], // Pink
       },
       'Bags': {
         'icon': Icons.work_rounded,
-        'gradient': [const Color(0xFF00BCD4), const Color(0xFF80DEEA)],
+        'gradient': [const Color(0xFF673AB7), const Color(0xFFB39DDB)], // Deep Purple
       },
       'Jewelry': {
         'icon': Icons.tungsten_rounded,
-        'gradient': [const Color(0xFFFFEB3B), const Color(0xFFF59D)],
+        'gradient': [const Color(0xFFFFEB3B), const Color(0xFFFFF9C4)], // Yellow
+      },
+      'Outerwear': {
+        'icon': Icons.ac_unit_rounded,
+        'gradient': [const Color(0xFF2196F3), const Color(0xFF90CAF9)], // Blue
+      },
+      'Activewear': {
+        'icon': Icons.fitness_center_rounded,
+        'gradient': [const Color(0xFF4CAF50), const Color(0xFFA5D6A7)], // Green
+      },
+      'Lingerie': {
+        'icon': Icons.favorite_rounded,
+        'gradient': [const Color(0xFFFF5722), const Color(0xFFFFAB91)], // Deep Orange
+      },
+      'Bottoms': {
+        'icon': Icons.checkroom_rounded,
+        'gradient': [const Color(0xFF3F51B5), const Color(0xFF9FA8DA)], // Indigo
+      },
+      'Ankle boot': {
+        'icon': Icons.settings_accessibility_rounded,
+        'gradient': [const Color(0xFF8BC34A), const Color(0xFFC5E1A5)], // Light Green
+      },
+      'Bag': {
+        'icon': Icons.work_rounded,
+        'gradient': [const Color(0xFFFF9C27), const Color(0xFFFFCC80)], // Amber
       },
       // Default style for unknown categories
       'default': {
