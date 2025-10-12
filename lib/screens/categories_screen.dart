@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../utils/responsive.dart';
+import '../controllers/product_controller.dart';
+import 'category_products_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -11,6 +14,7 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   int? _hoveredIndex;
+  final ProductController productController = Get.find<ProductController>();
 
   @override
   void initState() {
@@ -27,59 +31,51 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> categories = [
-      {
-        'name': 'Dresses',
+  // Define category icons and gradients
+  Map<String, Map<String, dynamic>> getCategoryStyles() {
+    return {
+      'Dresses': {
         'icon': Icons.checkroom_rounded,
         'gradient': [const Color(0xFFFF6B9D), const Color(0xFFFEC1CC)],
-        'count': 156,
       },
-      {
-        'name': 'Tops',
+      'Tops': {
         'icon': Icons.shopping_bag_rounded,
         'gradient': [const Color(0xFF9C27B0), const Color(0xFFCE93D8)],
-        'count': 89,
       },
-      {
-        'name': 'Pants',
+      'Pants': {
         'icon': Icons.dry_cleaning_rounded,
         'gradient': [const Color(0xFF2196F3), const Color(0xFF90CAF9)],
-        'count': 64,
       },
-      {
-        'name': 'Skirts',
+      'Skirts': {
         'icon': Icons.checkroom_outlined,
         'gradient': [const Color(0xFFFF9800), const Color(0xFFFFCC80)],
-        'count': 42,
       },
-      {
-        'name': 'Accessories',
+      'Accessories': {
         'icon': Icons.diamond_rounded,
         'gradient': [const Color(0xFF4CAF50), const Color(0xFFA5D6A7)],
-        'count': 127,
       },
-      {
-        'name': 'Shoes',
+      'Shoes': {
         'icon': Icons.settings_accessibility_rounded,
         'gradient': [const Color(0xFFE91E63), const Color(0xFFF48FB1)],
-        'count': 73,
       },
-      {
-        'name': 'Bags',
+      'Bags': {
         'icon': Icons.work_rounded,
         'gradient': [const Color(0xFF00BCD4), const Color(0xFF80DEEA)],
-        'count': 51,
       },
-      {
-        'name': 'Jewelry',
+      'Jewelry': {
         'icon': Icons.tungsten_rounded,
-        'gradient': [const Color(0xFFFFEB3B), const Color(0xFFFFF59D)],
-        'count': 98,
+        'gradient': [const Color(0xFFFFEB3B), const Color(0xFFF59D)],
       },
-    ];
+      // Default style for unknown categories
+      'default': {
+        'icon': Icons.category_rounded,
+        'gradient': [const Color(0xFF9E9E9E), const Color(0xFFE0E0E0)],
+      },
+    };
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -102,48 +98,73 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
           constraints: BoxConstraints(
             maxWidth: Responsive.isDesktop(context) ? 1400.0 : double.infinity,
           ),
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return GridView.builder(
-                padding: EdgeInsets.all(Responsive.isDesktop(context) ? 24 : 16),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: Responsive.value<int>(
-                    context: context,
-                    mobile: 2,
-                    tablet: 3,
-                    desktop: 4,
-                  ),
-                  crossAxisSpacing: Responsive.isDesktop(context) ? 24 : 16,
-                  mainAxisSpacing: Responsive.isDesktop(context) ? 24 : 16,
-                  childAspectRatio: Responsive.isDesktop(context) ? 1.15 : 1.1,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  final animation = Tween<double>(begin: 0, end: 1).animate(
-                    CurvedAnimation(
-                      parent: _animationController,
-                      curve: Interval(
-                        index * 0.1,
-                        (index + 1) * 0.1 + 0.5,
-                        curve: Curves.easeOutBack,
-                      ),
-                    ),
-                  );
-                  
-                  return Transform.scale(
-                    scale: animation.value,
-                    child: MouseRegion(
-                      onEnter: (_) => setState(() => _hoveredIndex = index),
-                      onExit: (_) => setState(() => _hoveredIndex = null),
-                      child: _buildCategoryCard(context, category, index),
-                    ),
-                  );
-                },
+          child: Obx(() {
+            // Get available categories from ProductController
+            final availableCategories = productController.categories;
+            final categoryStyles = getCategoryStyles();
+            
+            if (availableCategories.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
-            },
-          ),
+            }
+            
+            // Create category data with actual product counts
+            final categories = availableCategories.map((categoryName) {
+              final productCount = productController.getProductsByCategory(categoryName).length;
+              final style = categoryStyles[categoryName] ?? categoryStyles['default']!;
+              
+              return {
+                'name': categoryName,
+                'icon': style['icon'],
+                'gradient': style['gradient'],
+                'count': productCount,
+              };
+            }).toList();
+
+            return AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return GridView.builder(
+                  padding: EdgeInsets.all(Responsive.isDesktop(context) ? 24 : 16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: Responsive.value<int>(
+                      context: context,
+                      mobile: 2,
+                      tablet: 3,
+                      desktop: 4,
+                    ),
+                    crossAxisSpacing: Responsive.isDesktop(context) ? 24 : 16,
+                    mainAxisSpacing: Responsive.isDesktop(context) ? 24 : 16,
+                    childAspectRatio: Responsive.isDesktop(context) ? 1.2 : 1.15,
+                  ),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final animation = Tween<double>(begin: 0, end: 1).animate(
+                      CurvedAnimation(
+                        parent: _animationController,
+                        curve: Interval(
+                          (index * 0.1).clamp(0.0, 0.5),
+                          ((index + 1) * 0.1 + 0.4).clamp(0.0, 1.0),
+                          curve: Curves.easeOutBack,
+                        ),
+                      ),
+                    );
+                  
+                    return Transform.scale(
+                      scale: animation.value,
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => _hoveredIndex = index),
+                        onExit: (_) => setState(() => _hoveredIndex = null),
+                        child: _buildCategoryCard(context, category, index),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          }),
         ),
       ),
     );
@@ -164,14 +185,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
         ),
         child: InkWell(
           onTap: () {
-            // TODO: Navigate to category products
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Viewing ${category['name']}'),
-                duration: const Duration(seconds: 1),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            // Navigate to category products screen
+            Get.to(() => CategoryProductsScreen(categoryName: category['name'] as String));
           },
           borderRadius: BorderRadius.circular(20),
           child: Container(
@@ -212,12 +227,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                 ),
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -231,15 +247,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                         ),
                         child: Icon(
                           category['icon'] as IconData,
-                          size: Responsive.isDesktop(context) ? 40 : 36,
+                          size: Responsive.isDesktop(context) ? 32 : 28,
                           color: gradient.first,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         category['name'] as String,
                         style: TextStyle(
-                          fontSize: Responsive.isDesktop(context) ? 18 : 16,
+                          fontSize: Responsive.isDesktop(context) ? 16 : 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
@@ -251,12 +267,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                           ],
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         '${category['count']} items',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w500,
                         ),

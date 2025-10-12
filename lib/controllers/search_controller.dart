@@ -6,8 +6,11 @@ import '../controllers/category_controller.dart';
 import '../utils/color_utils.dart';
 
 class SearchController extends GetxController {
-  final ProductController productController = Get.find();
-  late final CategoryController categoryController;
+  ProductController? _productController;
+  ProductController get productController {
+    _productController ??= Get.find<ProductController>();
+    return _productController!;
+  }
   
   // Reactive variables
   final RxList<Product> _filteredProducts = <Product>[].obs;
@@ -27,31 +30,43 @@ class SearchController extends GetxController {
   RangeValues get priceRange => _priceRange.value;
   bool get showFilters => _showFilters.value;
 
-  // Available filter options - make categories reactive
+  // Available filter options - simplified to avoid dependency issues
   List<String> get availableCategories {
     try {
+      // Try to get from CategoryController first
       if (Get.isRegistered<CategoryController>()) {
         final catController = Get.find<CategoryController>();
         return ['All', ...catController.categories];
       }
     } catch (e) {
-      // Fallback to product controller categories if category controller not available
+      // Fallback silently
     }
-    return ['All', ...productController.categories];
+    
+    // Fallback to product controller categories or default categories
+    try {
+      return ['All', ...productController.categories];
+    } catch (e) {
+      // Final fallback to hardcoded categories
+      return ['All', 'Dresses', 'Tops', 'Pants', 'Skirts', 'Accessories', 'Shoes', 'Bags', 'Jewelry'];
+    }
   }
   
   List<String> get availableSizes => ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
   
   List<String> get availableColors {
-    // Get all colors from ColorUtils that are used in products
-    Set<String> productColors = {};
-    for (var product in productController.products) {
-      productColors.addAll(product.colors);
-    }
-    
-    // If we have specific colors in products, show only those
-    if (productColors.isNotEmpty) {
-      return ['All', ...productColors.toList()..sort()];
+    try {
+      // Get all colors from ColorUtils that are used in products
+      Set<String> productColors = {};
+      for (var product in productController.products) {
+        productColors.addAll(product.colors);
+      }
+      
+      // If we have specific colors in products, show only those
+      if (productColors.isNotEmpty) {
+        return ['All', ...productColors.toList()..sort()];
+      }
+    } catch (e) {
+      // Fallback silently if products can't be accessed
     }
     
     // Otherwise show all available colors from ColorUtils
@@ -62,27 +77,31 @@ class SearchController extends GetxController {
   void onInit() {
     super.onInit();
     
-    // Initialize category controller if not already registered
-    try {
-      categoryController = Get.find<CategoryController>();
-    } catch (e) {
-      categoryController = Get.put(CategoryController());
-    }
-    
-    // Ensure categories are loaded
+    // Load categories and initialize filters
     _loadCategories();
-    
     _initializeFilters();
-    _filteredProducts.assignAll(productController.products);
+    
+    try {
+      _filteredProducts.assignAll(productController.products);
+    } catch (e) {
+      // If ProductController is not available, initialize with empty list
+      _filteredProducts.assignAll([]);
+    }
   }
 
   // Load categories to ensure they're available
   Future<void> _loadCategories() async {
     try {
-      await categoryController.loadCategories();
+      // Try to load categories from product controller
       await productController.loadCategories();
+      
+      // Also try category controller if available
+      if (Get.isRegistered<CategoryController>()) {
+        final catController = Get.find<CategoryController>();
+        await catController.loadCategories();
+      }
     } catch (e) {
-      debugPrint('Error loading categories in search controller: $e');
+      print('Error loading categories: $e');
     }
   }
 
@@ -141,41 +160,50 @@ class SearchController extends GetxController {
   }
 
   void _applyFilters() {
-    final filtered = productController.products.where((product) {
-      // Text search
-      final searchText = _searchQuery.value.toLowerCase();
-      final matchesSearch = searchText.isEmpty ||
-          product.name.toLowerCase().contains(searchText) ||
-          product.description.toLowerCase().contains(searchText) ||
-          product.category.toLowerCase().contains(searchText);
+    try {
+      final filtered = productController.products.where((product) {
+        // Text search
+        final searchText = _searchQuery.value.toLowerCase();
+        final matchesSearch = searchText.isEmpty ||
+            product.name.toLowerCase().contains(searchText) ||
+            product.description.toLowerCase().contains(searchText) ||
+            product.category.toLowerCase().contains(searchText);
 
-      // Category filter
-      final matchesCategory = _selectedCategory.value == 'All' ||
-          product.category == _selectedCategory.value;
+        // Category filter
+        final matchesCategory = _selectedCategory.value == 'All' ||
+            product.category == _selectedCategory.value;
 
-      // Size filter
-      final matchesSize = _selectedSize.value == 'All' ||
-          product.sizes.contains(_selectedSize.value);
-          
-      // Color filter
-      final matchesColor = _selectedColor.value == 'All' ||
-          product.colors.contains(_selectedColor.value);
+        // Size filter
+        final matchesSize = _selectedSize.value == 'All' ||
+            product.sizes.contains(_selectedSize.value);
+            
+        // Color filter
+        final matchesColor = _selectedColor.value == 'All' ||
+            product.colors.contains(_selectedColor.value);
 
-      // Price filter
-      final matchesPrice = product.price >= _priceRange.value.start &&
-          product.price <= _priceRange.value.end;
+        // Price filter
+        final matchesPrice = product.price >= _priceRange.value.start &&
+            product.price <= _priceRange.value.end;
 
-      return matchesSearch && matchesCategory && matchesSize && matchesColor && matchesPrice;
-    }).toList();
+        return matchesSearch && matchesCategory && matchesSize && matchesColor && matchesPrice;
+      }).toList();
 
-    _filteredProducts.assignAll(filtered);
+      _filteredProducts.assignAll(filtered);
+    } catch (e) {
+      // If ProductController is not available, clear filtered products
+      _filteredProducts.clear();
+    }
   }
 
   double get maxPrice {
-    if (productController.products.isEmpty) return 1000;
-    return productController.products
-        .map((p) => p.price)
-        .reduce((a, b) => a > b ? a : b)
-        .ceilToDouble();
+    try {
+      if (productController.products.isEmpty) return 1000;
+      return productController.products
+          .map((p) => p.price)
+          .reduce((a, b) => a > b ? a : b)
+          .ceilToDouble();
+    } catch (e) {
+      return 1000;
+    }
   }
 }
