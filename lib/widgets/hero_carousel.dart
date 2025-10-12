@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../utils/responsive.dart';
 

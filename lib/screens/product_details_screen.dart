@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/product.dart';
 import '../controllers/cart_controller.dart';
 import '../controllers/product_controller.dart';
@@ -38,6 +39,154 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if we're on web and adjust layout accordingly
+    final isWeb = MediaQuery.of(context).size.width > 900;
+    
+    if (isWeb) {
+      return _buildWebLayout(context);
+    }
+    
+    return _buildMobileLayout(context);
+  }
+
+  Widget _buildWebLayout(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0.5,
+        centerTitle: false,
+        title: Text(
+          'PinkSnap',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        actions: [
+          Obx(() {
+            bool isInWishlist = _productController.isInWishlist(widget.product.id);
+            return TextButton.icon(
+              onPressed: () {
+                _productController.toggleWishlist(widget.product.id);
+              },
+              icon: Icon(
+                isInWishlist ? Icons.favorite : Icons.favorite_border,
+                color: isInWishlist ? Colors.red : Colors.grey[600],
+                size: 20,
+              ),
+              label: Text(
+                isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist',
+                style: TextStyle(
+                  color: isInWishlist ? Colors.red : Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }),
+          TextButton.icon(
+            onPressed: () {
+              Get.snackbar(
+                'Share', 
+                'Share feature coming soon!',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Theme.of(context).primaryColor,
+                colorText: Colors.white,
+              );
+            },
+            icon: Icon(Icons.share, color: Colors.grey[700], size: 20),
+            label: Text(
+              'Share',
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left side - Image gallery
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: _buildWebImageGallery(),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(width: 32),
+                
+                // Right side - Product details
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildWebProductHeader(),
+                        const SizedBox(height: 24),
+                        _buildRatingSection(),
+                        const SizedBox(height: 32),
+                        if (widget.product.sizes.isNotEmpty) ...[
+                          _buildSizeSelection(),
+                          const SizedBox(height: 32),
+                        ],
+                        _buildQuantitySelection(),
+                        const SizedBox(height: 32),
+                        _buildWebActionButtons(),
+                        const SizedBox(height: 40),
+                        _buildDescription(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -114,6 +263,206 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ],
       ),
       bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  Widget _buildWebImageGallery() {
+    return Column(
+      children: [
+        // Main image
+        Container(
+          height: 500,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentImageIndex = index;
+              });
+            },
+            itemCount: widget.product.images.length,
+            itemBuilder: (context, index) {
+              return CachedNetworkImage(
+                imageUrl: widget.product.images[index],
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[100],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[100],
+                  child: const Icon(Icons.error, size: 48),
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Thumbnail images
+        if (widget.product.images.length > 1)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                widget.product.images.length.clamp(0, 5),
+                (index) => GestureDetector(
+                  onTap: () {
+                    _pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _currentImageIndex == index
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey[300]!,
+                        width: _currentImageIndex == index ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.product.images[index],
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[200],
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.error, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildWebProductHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.product.name,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '\$${widget.product.price.toStringAsFixed(2)}',
+          style: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWebActionButtons() {
+    final canAddToCart = _selectedSize != null && 
+        (widget.product.stock[_selectedSize!] ?? 0) >= _quantity;
+    
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: canAddToCart ? () {
+              // Clear cart and add only this item for Buy Now
+              _cartController.clearCart();
+              _cartController.addToCart(
+                widget.product,
+                _selectedSize!,
+                _quantity,
+              );
+              Get.to(() => const CheckoutScreen());
+            } : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: canAddToCart 
+                  ? Theme.of(context).primaryColor 
+                  : Colors.grey[300],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: canAddToCart ? 2 : 0,
+            ),
+            child: Text(
+              'Buy Now - \$${widget.product.price.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: canAddToCart ? Colors.white : Colors.grey[600],
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: OutlinedButton.icon(
+            onPressed: canAddToCart ? () {
+              _cartController.addToCart(
+                widget.product,
+                _selectedSize!,
+                _quantity,
+              );
+              Get.snackbar(
+                'Added to Cart',
+                '${widget.product.name} has been added to your cart',
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+                duration: const Duration(seconds: 2),
+              );
+            } : null,
+            icon: Icon(
+              Icons.shopping_cart_outlined,
+              color: canAddToCart ? Theme.of(context).primaryColor : Colors.grey[400],
+            ),
+            label: Text(
+              'Add to Cart',
+              style: TextStyle(
+                color: canAddToCart ? Theme.of(context).primaryColor : Colors.grey[400],
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                color: canAddToCart 
+                    ? Theme.of(context).primaryColor 
+                    : Colors.grey[300]!,
+                width: 2,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

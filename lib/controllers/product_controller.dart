@@ -71,12 +71,29 @@ class ProductController extends GetxController {
       _isLoading.value = true;
       List<Product> loadedProducts = await FirebaseDbService.getAllProducts();
       _products.assignAll(loadedProducts);
+      
+      // Debug: Print category distribution
+      _debugCategoryDistribution();
     } catch (e) {
       debugPrint('Error loading products: $e');
       Get.snackbar('Error', 'Failed to load products');
     } finally {
       _isLoading.value = false;
     }
+  }
+  
+  void _debugCategoryDistribution() {
+    debugPrint('=== PRODUCT CATEGORY DEBUG ===');
+    final categoryCount = <String, int>{};
+    for (final product in _products) {
+      categoryCount[product.category] = (categoryCount[product.category] ?? 0) + 1;
+      debugPrint('Product: ${product.name} -> Category: ${product.category}');
+    }
+    debugPrint('Category distribution:');
+    categoryCount.forEach((category, count) {
+      debugPrint('  $category: $count products');
+    });
+    debugPrint('===============================');
   }
   
   Future<void> loadCategories() async {
