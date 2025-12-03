@@ -56,10 +56,18 @@ class ImageSearchController extends GetxController {
       // For older versions, use storage permission
       PermissionStatus status;
       
-      if (await _isAndroid13OrAbove()) {
+      if (Platform.isAndroid) {
+        // Try to request photos permission (Android 13+)
+        // If it's not available, it will fall back to storage permission
         status = await Permission.photos.request();
+        
+        // If photos permission is not available (older Android), try storage
+        if (status == PermissionStatus.denied && !await Permission.photos.isRestricted) {
+          status = await Permission.storage.request();
+        }
       } else {
-        status = await Permission.storage.request();
+        // For iOS
+        status = await Permission.photos.request();
       }
       
       if (status.isDenied || status.isPermanentlyDenied) {
@@ -72,12 +80,13 @@ class ImageSearchController extends GetxController {
           backgroundColor: Colors.red,
           colorText: Colors.white,
           duration: const Duration(seconds: 4),
+          mainButton: status.isPermanentlyDenied 
+            ? TextButton(
+                onPressed: () => openAppSettings(),
+                child: const Text('Open Settings', style: TextStyle(color: Colors.white)),
+              )
+            : null,
         );
-        
-        // If permanently denied, open app settings
-        if (status.isPermanentlyDenied) {
-          await openAppSettings();
-        }
         return;
       }
 
@@ -103,31 +112,26 @@ class ImageSearchController extends GetxController {
     }
   }
 
-  Future<bool> _isAndroid13OrAbove() async {
-    // Check if running on Android 13 (API 33) or above
-    try {
-      if (Platform.isAndroid) {
-        // We'll use a simple check - try photos permission first
-        await Permission.photos.status;
-        return true; // If photos permission exists, we're on Android 13+
-      }
-    } catch (e) {
-      return false; // If photos permission doesn't exist, we're on older Android
-    }
-    return false;
-  }
-
   Future<void> pickImageFromCamera() async {
     try {
       // Request permission
       final status = await Permission.camera.request();
-      if (status.isDenied) {
+      if (status.isDenied || status.isPermanentlyDenied) {
         Get.snackbar(
           'Permission Denied',
-          'Please allow camera access to take photos',
+          status.isPermanentlyDenied
+            ? 'Please enable camera access in Settings'
+            : 'Please allow camera access to take photos',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          mainButton: status.isPermanentlyDenied 
+            ? TextButton(
+                onPressed: () => openAppSettings(),
+                child: const Text('Open Settings', style: TextStyle(color: Colors.white)),
+              )
+            : null,
         );
         return;
       }
