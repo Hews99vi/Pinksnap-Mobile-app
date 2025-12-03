@@ -35,15 +35,18 @@ class MainScreen extends StatelessWidget {
   
   Widget _buildWebLayout(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Row(
         children: [
           // Side navigation rail
-          Obx(() => NavigationRail(
-            selectedIndex: _currentIndex.value,
-            onDestinationSelected: (index) => _currentIndex.value = index,
-            labelType: NavigationRailLabelType.all,
-            backgroundColor: Colors.white,
-            elevation: 1,
+          Container(
+            width: 90,
+            color: Colors.white,
+            child: Obx(() => NavigationRail(
+              selectedIndex: _currentIndex.value,
+              onDestinationSelected: (index) => _currentIndex.value = index,
+              labelType: NavigationRailLabelType.all,
+              backgroundColor: Colors.white,
             selectedIconTheme: IconThemeData(
               color: Theme.of(context).primaryColor,
               size: 28,
@@ -83,8 +86,12 @@ class MainScreen extends StatelessWidget {
                     'PinkSnap',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 12,
+                      letterSpacing: 0.3,
                     ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.visible,
+                    softWrap: false,
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -120,16 +127,37 @@ class MainScreen extends StatelessWidget {
                 label: Text('Profile'),
               ),
             ],
-          )),
+            )),
+          ),
           
-          // Vertical divider
           const VerticalDivider(thickness: 1, width: 1),
           
           // Main content area
           Expanded(
             child: Container(
-              color: Colors.grey.shade50,
-              child: Obx(() => _screens[_currentIndex.value]),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFFAFAFA),
+                    Color(0xFFFFF0F5),
+                    Color(0xFFFAFAFA),
+                  ],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  // Decorative background pattern
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: BackgroundPatternPainter(),
+                    ),
+                  ),
+                  // Content
+                  Obx(() => _screens[_currentIndex.value]),
+                ],
+              ),
             ),
           ),
         ],
@@ -205,4 +233,53 @@ class MainScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+// Custom painter for decorative background pattern
+class BackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw circles pattern
+    final circlePaint = Paint()
+      ..color = Color(0xFFFFB6C1).withValues(alpha: 0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final spacing = 80.0;
+    final circleRadius = 25.0;
+
+    for (double x = 0; x < size.width + spacing; x += spacing) {
+      for (double y = 0; y < size.height + spacing; y += spacing) {
+        canvas.drawCircle(Offset(x, y), circleRadius, circlePaint);
+      }
+    }
+
+    // Draw dots pattern
+    final dotPaint = Paint()
+      ..color = Color(0xFFFF69B4).withValues(alpha: 0.12)
+      ..style = PaintingStyle.fill;
+
+    for (double x = spacing / 2; x < size.width; x += spacing) {
+      for (double y = spacing / 2; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 4, dotPaint);
+      }
+    }
+
+    // Draw diagonal lines
+    final linePaint = Paint()
+      ..color = Color(0xFFFFB6C1).withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    for (double i = -size.height; i < size.width + size.height; i += spacing * 1.5) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        linePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

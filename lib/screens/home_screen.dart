@@ -52,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final maxWidth = Responsive.isDesktop(context) ? 1400.0 : double.infinity;
     
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth),
@@ -435,9 +436,60 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
+          ),
         ),
       ),
     );
   }
+}
+
+// Custom painter for home screen background pattern
+class HomeBackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw large circles
+    final circlePaint = Paint()
+      ..color = Color(0xFFFF69B4).withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    final spacing = 100.0;
+
+    for (double x = -50; x < size.width + spacing; x += spacing) {
+      for (double y = -50; y < size.height + spacing; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 40, circlePaint);
+        canvas.drawCircle(Offset(x, y), 20, circlePaint);
+      }
+    }
+
+    // Draw dots
+    final dotPaint = Paint()
+      ..color = Color(0xFFFFB6C1).withValues(alpha: 0.15)
+      ..style = PaintingStyle.fill;
+
+    for (double x = spacing / 2; x < size.width; x += spacing) {
+      for (double y = spacing / 2; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 5, dotPaint);
+      }
+    }
+
+    // Draw wave pattern
+    final wavePaint = Paint()
+      ..color = Color(0xFFFF69B4).withValues(alpha: 0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final path = Path();
+    for (double y = 0; y < size.height; y += 150) {
+      path.reset();
+      path.moveTo(0, y);
+      for (double x = 0; x <= size.width; x += 50) {
+        path.lineTo(x, y + 20 * (x % 100 < 50 ? 1 : -1));
+      }
+      canvas.drawPath(path, wavePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

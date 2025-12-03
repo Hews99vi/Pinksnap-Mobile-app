@@ -4,6 +4,7 @@ import '../models/product.dart';
 import '../widgets/product_card.dart';
 import '../screens/product_details_screen.dart';
 import '../controllers/product_controller.dart';
+import '../utils/responsive.dart';
 
 class BestSellingSection extends StatelessWidget {
   const BestSellingSection({super.key});
@@ -13,8 +14,9 @@ class BestSellingSection extends StatelessWidget {
     final ProductController productController = Get.find<ProductController>();
     
     return Obx(() {
-      // Use products from the controller instead of hardcoded ones
-      List<Product> bestSellers = productController.products.take(3).toList();
+      // Show more products on web/desktop view
+      final int itemCount = Responsive.isDesktop(context) ? 6 : 3;
+      List<Product> bestSellers = productController.products.take(itemCount).toList();
       
       // If no products loaded from Firebase, use hardcoded fallback
       if (bestSellers.isEmpty) {
