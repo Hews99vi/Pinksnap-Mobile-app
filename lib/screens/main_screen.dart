@@ -110,13 +110,13 @@ class MainScreen extends StatelessWidget {
               ),
               NavigationRailDestination(
                 icon: Badge(
-                  isLabelVisible: _productController.wishlistIds.isNotEmpty,
-                  label: Text('${_productController.wishlistIds.length}'),
+                  isLabelVisible: _productController.wishlistProducts.isNotEmpty,
+                  label: Text('${_productController.wishlistProducts.length}'),
                   child: const Icon(Icons.favorite_border),
                 ),
                 selectedIcon: Badge(
-                  isLabelVisible: _productController.wishlistIds.isNotEmpty,
-                  label: Text('${_productController.wishlistIds.length}'),
+                  isLabelVisible: _productController.wishlistProducts.isNotEmpty,
+                  label: Text('${_productController.wishlistProducts.length}'),
                   child: const Icon(Icons.favorite),
                 ),
                 label: const Text('Wishlist'),
@@ -187,14 +187,14 @@ class MainScreen extends StatelessWidget {
               icon: Stack(
                 children: [
                   Icon(
-                    _productController.wishlistIds.isNotEmpty 
+                    _productController.wishlistProducts.isNotEmpty 
                         ? Icons.favorite 
                         : Icons.favorite_border,
                     color: _currentIndex.value == 2 
                         ? Theme.of(context).primaryColor
                         : Colors.grey,
                   ),
-                  if (_productController.wishlistIds.isNotEmpty)
+                  if (_productController.wishlistProducts.isNotEmpty)
                     Positioned(
                       right: 0,
                       top: 0,
@@ -209,7 +209,7 @@ class MainScreen extends StatelessWidget {
                           minHeight: 12,
                         ),
                         child: Text(
-                          '${_productController.wishlistIds.length}',
+                          '${_productController.wishlistProducts.length}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 8,
