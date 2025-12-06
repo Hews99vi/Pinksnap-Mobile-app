@@ -11,7 +11,7 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ProductController productController = Get.put(ProductController());
+    final ProductController productController = Get.find<ProductController>();
     final OrderController orderController = Get.put(OrderController());
     final AuthController authController = Get.find();
 

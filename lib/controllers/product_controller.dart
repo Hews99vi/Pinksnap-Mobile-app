@@ -5,6 +5,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user.dart';
 import '../services/firebase_db_service.dart';
+import '../services/image_search_service.dart';
 import 'auth_controller.dart';
 import 'category_controller.dart';
 
@@ -77,6 +78,15 @@ class ProductController extends GetxController {
       _products.assignAll(loadedProducts);
 
       _debugCategoryDistribution();
+
+      debugPrint('🔥 ProductController instance = $hashCode');
+      debugPrint('🔥 Products loaded = ${_products.length}');
+
+      // ✅ Rebuild image search index after products load
+      if (Get.isRegistered<ImageSearchService>()) {
+        Get.find<ImageSearchService>().rebuildIndex();
+        debugPrint('✅ ImageSearchService index rebuilt after products load');
+      }
     } catch (e) {
       debugPrint('Error loading products: $e');
       Get.snackbar('Error', 'Failed to load products');

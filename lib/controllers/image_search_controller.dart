@@ -9,7 +9,8 @@ import '../services/tflite_model_service.dart';
 
 class ImageSearchController extends GetxController {
   final ImagePicker _picker = ImagePicker();
-  final ImageSearchService _imageSearchService = ImageSearchService();
+  // ✅ Use singleton instance registered in main.dart
+  final ImageSearchService _imageSearchService = Get.find<ImageSearchService>();
   final TFLiteModelService _tfliteService = TFLiteModelService();
   
   var isLoading = false.obs;
@@ -50,6 +51,7 @@ class ImageSearchController extends GetxController {
   }
 
   Future<void> pickImageFromGallery() async {
+    debugPrint('🔥 pickImageFromGallery CALLED');
     try {
       // Request permission based on Android version
       // For Android 13+ (API 33+), use photos permission
@@ -113,6 +115,7 @@ class ImageSearchController extends GetxController {
   }
 
   Future<void> pickImageFromCamera() async {
+    debugPrint('🔥 pickImageFromCamera CALLED');
     try {
       // Request permission
       final status = await Permission.camera.request();
@@ -144,10 +147,14 @@ class ImageSearchController extends GetxController {
       );
       
       if (image != null) {
+        debugPrint('🔥 Camera image captured: ${image.path}');
         selectedImage.value = File(image.path);
         await performImageSearch(selectedImage.value!);
+      } else {
+        debugPrint('🔥 Camera cancelled or returned null');
       }
     } catch (e) {
+      debugPrint('🔥 Camera error: $e');
       Get.snackbar(
         'Error',
         'Failed to take photo: ${e.toString()}',
@@ -159,6 +166,10 @@ class ImageSearchController extends GetxController {
   }
 
   Future<void> performImageSearch(File imageFile) async {
+    debugPrint('🔥 performImageSearch START');
+    debugPrint('🔥 Image file path: ${imageFile.path}');
+    debugPrint('🔥 Image file exists: ${imageFile.existsSync()}');
+    
     try {
       isLoading.value = true;
       showPredictions.value = false;
@@ -176,8 +187,10 @@ class ImageSearchController extends GetxController {
         predictions.value = _imageSearchService.lastPredictions!;
       }
       
+      debugPrint('🔥 Calling ImageSearchService.searchSimilarProducts');
       // Perform image search using ML service
       final results = await _imageSearchService.searchSimilarProducts(imageFile);
+      debugPrint('🔥 Results count: ${results.length}');
       
       // Update predictions from the service
       if (_imageSearchService.lastPredictions != null) {
@@ -262,6 +275,7 @@ class ImageSearchController extends GetxController {
   }
 
   void showImageSourceDialog() {
+    debugPrint('🔥 showImageSourceDialog opened');
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
@@ -298,6 +312,7 @@ class ImageSearchController extends GetxController {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      debugPrint('🔥 Camera button tapped');
                       Get.back();
                       pickImageFromCamera();
                     },
@@ -333,6 +348,7 @@ class ImageSearchController extends GetxController {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      debugPrint('🔥 Gallery button tapped');
                       Get.back();
                       pickImageFromGallery();
                     },

@@ -363,13 +363,13 @@ class ImageSearchScreen extends StatelessWidget {
             padding: const EdgeInsets.only(
               left: 16,
               right: 16,
-              bottom: 80, // Keep original padding for now
+              bottom: 80,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.72, // Slightly reduced to give more height for content
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+              childAspectRatio: 0.65, // Adjusted for better height accommodation
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: controller.searchResults.length,
             itemBuilder: (context, index) {

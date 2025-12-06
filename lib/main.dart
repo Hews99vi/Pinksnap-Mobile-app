@@ -11,6 +11,7 @@ import 'controllers/order_controller.dart';
 import 'controllers/image_search_controller.dart';
 import 'services/stripe_service.dart';
 import 'services/tflite_model_service.dart';
+import 'services/image_search_service.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'utils/logger.dart';
@@ -53,14 +54,19 @@ void main() async {
         // Continue without Stripe
       }
       
-      // Initialize controllers
+      // Initialize controllers in correct order
       Logger.info('Initializing controllers');
       try {
-        Get.put(AuthController());
-        Get.put(ProductController());
-        Get.put(CartController());
-        Get.put(OrderController());
-        Get.put(ImageSearchController());
+        // ✅ Register core controllers as permanent singletons
+        Get.put(AuthController(), permanent: true);
+        Get.put(ProductController(), permanent: true);
+        Get.put(CartController(), permanent: true);
+        Get.put(OrderController(), permanent: true);
+        
+        // ✅ Register ImageSearchService after ProductController
+        Get.put(ImageSearchService(), permanent: true);
+        
+        Get.put(ImageSearchController(), permanent: true);
         Logger.info('Controllers initialized successfully');
       } catch (e) {
         Logger.error('Controller initialization failed', error: e);

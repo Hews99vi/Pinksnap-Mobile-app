@@ -21,7 +21,7 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final PageController _pageController = PageController();
   final CartController _cartController = Get.put(CartController());
-  final ProductController _productController = Get.put(ProductController());
+  final ProductController _productController = Get.find<ProductController>();
   
   int _currentImageIndex = 0;
   String? _selectedSize;
