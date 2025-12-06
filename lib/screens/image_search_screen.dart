@@ -151,77 +151,39 @@ class ImageSearchScreen extends StatelessWidget {
             ),
           ),
           
-          // Predictions Section
+          // AI Processing Animation - Only show when loading
           Obx(() {
-            if (controller.showPredictions.value && controller.predictions.isNotEmpty) {
+            if (controller.isLoading.value && controller.selectedImage.value != null) {
               return Container(
                 margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lightbulb_outline, 
-                          color: Colors.white.withValues(alpha: 0.9), 
-                          size: 18
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white.withValues(alpha: 0.9),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'AI Predictions',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    ...controller.predictions.take(3).map((prediction) {
-                      final label = prediction['label'] as String;
-                      final confidence = prediction['confidence'] as double;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8, 
-                                vertical: 2
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getConfidenceColor(confidence),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${confidence.toStringAsFixed(1)}%',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                    const SizedBox(width: 12),
+                    Text(
+                      'AI is analyzing your image...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -266,16 +228,6 @@ class ImageSearchScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getConfidenceColor(double confidence) {
-    if (confidence >= 70) {
-      return Colors.green;
-    } else if (confidence >= 40) {
-      return Colors.orange;
-    } else {
-      return Colors.red.withValues(alpha: 0.7);
-    }
   }
 
   Widget _buildLoadingSection() {

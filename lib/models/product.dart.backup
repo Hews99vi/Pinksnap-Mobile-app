@@ -1,18 +1,10 @@
-import 'package:flutter/foundation.dart';
-
 class Product {
   final String id;
   final String name;
   final String description;
   final double price;
   final List<String> images;
-
-  /// Old human-readable category (keep for UI / backward compat)
   final String category;
-
-  /// New strict key that must match model labels
-  final String categoryKey;
-
   final List<String> sizes;
   final List<String> colors;
   final Map<String, int> stock;
@@ -26,7 +18,6 @@ class Product {
     required this.price,
     required this.images,
     required this.category,
-    required this.categoryKey, // ✅ NEW
     required this.sizes,
     this.colors = const [],
     required this.stock,
@@ -35,28 +26,15 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    final rawCategoryKey = (json['categoryKey'] ?? json['category'] ?? '')
-        .toString()
-        .trim();
-
-    // TEMP DEBUG LOG
-    debugPrint("LOADED PRODUCT '${json['name']}' categoryKey='${json['categoryKey']}' category='${json['category']}'");
-
     return Product(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
       images: List<String>.from(json['images'] as List),
-
-      // Backward compatible:
-      category: (json['category'] ?? '').toString(),
-      categoryKey: rawCategoryKey, // ✅ NEW, fallback safe
-
+      category: json['category'] as String,
       sizes: List<String>.from(json['sizes'] as List),
-      colors: json['colors'] != null
-          ? List<String>.from(json['colors'] as List)
-          : [],
+      colors: json['colors'] != null ? List<String>.from(json['colors'] as List) : [],
       stock: Map<String, int>.from(json['stock'] as Map),
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: json['reviewCount'] as int? ?? 0,
@@ -70,11 +48,7 @@ class Product {
       'description': description,
       'price': price,
       'images': images,
-
-      // keep both for now
       'category': category,
-      'categoryKey': categoryKey, // ✅ NEW
-
       'sizes': sizes,
       'colors': colors,
       'stock': stock,

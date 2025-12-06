@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/product.dart';
 import '../controllers/cart_controller.dart';
 import '../controllers/product_controller.dart';
@@ -270,7 +269,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Column(
       children: [
         // Main image
-        Container(
+        SizedBox(
           height: 500,
           child: PageView.builder(
             controller: _pageController,

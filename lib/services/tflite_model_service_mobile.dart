@@ -173,6 +173,9 @@ class TFLiteModelService {
     int inputHeight,
     int inputWidth,
   ) {
+    const mean = 127.5;
+    const std = 127.5;
+    
     var convertedBytes = List.generate(
       1,
       (i) => List.generate(
@@ -181,11 +184,11 @@ class TFLiteModelService {
           inputWidth,
           (x) {
             final pixel = image.getPixel(x, y);
-            // Normalize to 0-1 range
+            // Normalize to [-1, 1] as expected by Teachable Machine exports
             return [
-              pixel.r / 255.0,
-              pixel.g / 255.0,
-              pixel.b / 255.0,
+              (pixel.r - mean) / std,
+              (pixel.g - mean) / std,
+              (pixel.b - mean) / std,
             ];
           },
         ),

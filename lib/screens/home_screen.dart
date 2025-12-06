@@ -40,9 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_selectedCategoryIndex == 0) {
       return productController.products;
     }
+    // Convert UI category name to strict categoryKey for filtering
     final selectedCategory = categories[_selectedCategoryIndex];
+    final categoryKey = selectedCategory.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '_');
     return productController.products
-        .where((product) => product.category == selectedCategory)
+        .where((product) => product.categoryKey.trim().toUpperCase() == categoryKey)
         .toList();
   }
 

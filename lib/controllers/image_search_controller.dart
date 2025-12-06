@@ -193,14 +193,29 @@ class ImageSearchController extends GetxController {
         final label = topPrediction['label'] as String;
         final confidence = topPrediction['confidence'] as double;
         
-        Get.snackbar(
-          'Prediction',
-          'Detected: $label (${confidence.toStringAsFixed(1)}% confidence)\nFound ${results.length} similar products',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        if (results.isEmpty) {
+          // Category detected but no products found
+          Get.snackbar(
+            'Category Not Available',
+            'Detected: $label (${confidence.toStringAsFixed(1)}% confidence)\n\nNo products found in this category yet. This category will be added soon!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 4),
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+          );
+        } else {
+          // Products found
+          Get.snackbar(
+            'Products Found',
+            'Detected: $label (${confidence.toStringAsFixed(1)}% confidence)\nFound ${results.length} similar products',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+          );
+        }
       } else {
         Get.snackbar(
           'Search Completed',

@@ -162,16 +162,25 @@ class SearchController extends GetxController {
   void _applyFilters() {
     try {
       final filtered = productController.products.where((product) {
-        // Text search
+        // Text search - still include category text for user-friendly search
         final searchText = _searchQuery.value.toLowerCase();
         final matchesSearch = searchText.isEmpty ||
             product.name.toLowerCase().contains(searchText) ||
             product.description.toLowerCase().contains(searchText) ||
             product.category.toLowerCase().contains(searchText);
 
-        // Category filter
-        final matchesCategory = _selectedCategory.value == 'All' ||
-            product.category == _selectedCategory.value;
+        // Category filter - STRICT: use categoryKey for logic
+        bool matchesCategory;
+        if (_selectedCategory.value == 'All') {
+          matchesCategory = true;
+        } else {
+          final categoryKey = _selectedCategory.value
+              .trim()
+              .toUpperCase()
+              .replaceAll(RegExp(r'\s+'), '_');
+          matchesCategory = 
+              product.categoryKey.trim().toUpperCase() == categoryKey;
+        }
 
         // Size filter
         final matchesSize = _selectedSize.value == 'All' ||

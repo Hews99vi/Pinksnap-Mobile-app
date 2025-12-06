@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user.dart';
@@ -9,29 +10,33 @@ import 'category_controller.dart';
 
 class ProductController extends GetxController {
   static ProductController get instance => Get.find();
-  
+
   final RxList<Product> _products = <Product>[].obs;
   final RxList<CartItem> _cartItems = <CartItem>[].obs;
   final RxList<String> _wishlistIds = <String>[].obs;
   final RxList<String> _categories = <String>[].obs;
   final RxBool _isLoading = false.obs;
-  
+
   List<Product> get products => _products;
   List<CartItem> get cartItems => _cartItems;
   List<String> get wishlistIds => _wishlistIds;
   List<String> get categories => _categories;
   bool get isLoading => _isLoading.value;
-  
-  // Make wishlist products reactive
+
   List<Product> get wishlistProducts {
-    final products = _products.where((product) => _wishlistIds.contains(product.id)).toList();
-    debugPrint('Getting wishlist products: ${products.length} products found for wishlist IDs: $_wishlistIds');
+    final products = _products
+        .where((product) => _wishlistIds.contains(product.id))
+        .toList();
+    debugPrint(
+        'Getting wishlist products: ${products.length} products found for wishlist IDs: $_wishlistIds');
     return products;
   }
-  
-  int get cartItemCount => _cartItems.fold(0, (sum, item) => sum + item.quantity);
-  double get cartTotal => _cartItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
-  
+
+  int get cartItemCount =>
+      _cartItems.fold(0, (sum, item) => sum + item.quantity);
+  double get cartTotal => _cartItems.fold(
+      0.0, (sum, item) => sum + (item.price * item.quantity));
+
   @override
   void onInit() {
     super.onInit();
@@ -39,17 +44,15 @@ class ProductController extends GetxController {
     loadCategories();
     _initializeUserData();
   }
-  
+
   void _initializeUserData() {
     final authController = Get.find<AuthController>();
-    
-    // Load data immediately if user is already logged in
+
     if (authController.currentUser != null) {
       loadUserCart();
       loadUserWishlist();
     }
-    
-    // Listen to auth state changes to load user-specific data
+
     ever(authController.currentUserRx, (User? user) {
       debugPrint('Auth state changed - User: ${user?.email ?? 'None'}');
       if (user != null) {
@@ -63,16 +66,16 @@ class ProductController extends GetxController {
       }
     });
   }
-  
+
   // ==== PRODUCTS ====
-  
+
   Future<void> loadProducts() async {
     try {
       _isLoading.value = true;
-      List<Product> loadedProducts = await FirebaseDbService.getAllProducts();
+      List<Product> loadedProducts =
+          await FirebaseDbService.getAllProducts();
       _products.assignAll(loadedProducts);
-      
-      // Debug: Print category distribution
+
       _debugCategoryDistribution();
     } catch (e) {
       debugPrint('Error loading products: $e');
@@ -81,37 +84,37 @@ class ProductController extends GetxController {
       _isLoading.value = false;
     }
   }
-  
+
   void _debugCategoryDistribution() {
-    debugPrint('=== PRODUCT CATEGORY DEBUG ===');
-    final categoryCount = <String, int>{};
-    for (final product in _products) {
-      categoryCount[product.category] = (categoryCount[product.category] ?? 0) + 1;
-      debugPrint('Product: ${product.name} -> Category: ${product.category}');
+    // TEMPORARY DEBUG - showing categoryKey counts only
+    debugPrint("=== CATEGORYKEY COUNTS ===");
+    final keyCount = <String, int>{};
+    for (final p in _products) {
+      final k = p.categoryKey.trim().toUpperCase();
+      keyCount[k] = (keyCount[k] ?? 0) + 1;
     }
-    debugPrint('Category distribution:');
-    categoryCount.forEach((category, count) {
-      debugPrint('  $category: $count products');
-    });
-    debugPrint('===============================');
+    keyCount.forEach((k,c) => debugPrint("  $k: $c"));
+    debugPrint("==========================");
   }
-  
+
   Future<void> loadCategories() async {
     try {
-      List<String> loadedCategories = await FirebaseDbService.getCategories();
+      List<String> loadedCategories =
+          await FirebaseDbService.getCategories();
       _categories.assignAll(loadedCategories);
     } catch (e) {
       debugPrint('Error loading categories: $e');
     }
   }
-  
+
   Future<bool> addProduct(Product product) async {
     try {
       _isLoading.value = true;
-      
-      String productId = await FirebaseDbService.addProduct(product);
-      
-      // Update local list with the new product ID
+
+      String productId =
+          await FirebaseDbService.addProduct(product);
+
+      // ✅ include categoryKey in the local copy
       Product newProduct = Product(
         id: productId,
         name: product.name,
@@ -119,15 +122,16 @@ class ProductController extends GetxController {
         price: product.price,
         images: product.images,
         category: product.category,
+        categoryKey: product.categoryKey, // ✅ NEW
         sizes: product.sizes,
+        colors: product.colors,
         stock: product.stock,
         rating: product.rating,
         reviewCount: product.reviewCount,
       );
-      
+
       _products.add(newProduct);
-      
-      // Refresh categories if a category controller exists
+
       try {
         if (Get.isRegistered<CategoryController>()) {
           Get.find<CategoryController>().loadCategories();
@@ -135,7 +139,7 @@ class ProductController extends GetxController {
       } catch (e) {
         debugPrint('Category controller not found, skipping refresh');
       }
-      
+
       Get.snackbar('Success', 'Product added successfully');
       return true;
     } catch (e) {
@@ -146,18 +150,19 @@ class ProductController extends GetxController {
       _isLoading.value = false;
     }
   }
-        
+
   Future<bool> updateProduct(Product product) async {
     try {
       _isLoading.value = true;
-      
+
       await FirebaseDbService.updateProduct(product);
-      
-      final index = _products.indexWhere((p) => p.id == product.id);
+
+      final index =
+          _products.indexWhere((p) => p.id == product.id);
       if (index != -1) {
         _products[index] = product;
       }
-      
+
       Get.snackbar('Success', 'Product updated successfully!');
       return true;
     } catch (e) {
@@ -168,14 +173,14 @@ class ProductController extends GetxController {
       _isLoading.value = false;
     }
   }
-  
+
   Future<bool> deleteProduct(String productId) async {
     try {
       _isLoading.value = true;
-      
+
       await FirebaseDbService.deleteProduct(productId);
       _products.removeWhere((p) => p.id == productId);
-      
+
       Get.snackbar('Success', 'Product deleted successfully!');
       return true;
     } catch (e) {
@@ -186,200 +191,84 @@ class ProductController extends GetxController {
       _isLoading.value = false;
     }
   }
-  
-  // ==== CART ====
-  
+
+  // ==== CART & WISHLIST ====
+
   Future<void> loadUserCart() async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) return;
-    
     try {
-      List<CartItem> cartItems = await FirebaseDbService.getUserCart(
-        authController.currentUser!.id,
-      );
+      final authController = Get.find<AuthController>();
+      final user = authController.currentUser;
       
-      // Fix for default "Classic White Blouse" appearing in all new user carts
-      // Check if there's only one item and it's the Classic White Blouse
-      if (cartItems.length == 1 && 
-          cartItems[0].productName == 'Classic White Blouse' &&
-          cartItems[0].price == 45.99) {
-        debugPrint('Detected default item in cart for new user. Clearing default item.');
-        // Clear the cart in Firebase
-        await FirebaseDbService.clearUserCart(authController.currentUser!.id);
-        // Clear local cart items
+      if (user == null) {
         _cartItems.clear();
-      } else {
-        // Proceed normally with the loaded cart
-        _cartItems.assignAll(cartItems);
+        return;
       }
+
+      List<CartItem> cartItems = await FirebaseDbService.getUserCart(user.id);
+      _cartItems.assignAll(cartItems);
+      debugPrint('Loaded ${cartItems.length} cart items for user ${user.email}');
     } catch (e) {
-      debugPrint('Error loading cart: $e');
+      debugPrint('Error loading user cart: $e');
     }
   }
-  
-  Future<void> addToCart(Product product, String size, int quantity) async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) {
-      Get.snackbar('Error', 'Please login to add items to cart');
-      return;
-    }
-    
-    try {
-      // Check if item already exists in cart
-      final existingItemIndex = _cartItems.indexWhere(
-        (item) => item.productId == product.id && item.size == size,
-      );
-      
-      if (existingItemIndex != -1) {
-        // Update quantity
-        _cartItems[existingItemIndex] = CartItem(
-          productId: product.id,
-          productName: product.name,
-          price: product.price,
-          size: size,
-          quantity: _cartItems[existingItemIndex].quantity + quantity,
-          productImage: product.images.isNotEmpty ? product.images.first : '',
-        );
-      } else {
-        // Add new item
-        _cartItems.add(CartItem(
-          productId: product.id,
-          productName: product.name,
-          price: product.price,
-          size: size,
-          quantity: quantity,
-          productImage: product.images.isNotEmpty ? product.images.first : '',
-        ));
-      }
-      
-      await FirebaseDbService.updateUserCart(
-        authController.currentUser!.id,
-        _cartItems,
-      );
-      
-      Get.snackbar('Success', 'Item added to cart');
-    } catch (e) {
-      debugPrint('Error adding to cart: $e');
-      Get.snackbar('Error', 'Failed to add item to cart');
-    }
-  }
-  
-  Future<void> removeFromCart(CartItem item) async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) return;
-    
-    try {
-      _cartItems.removeWhere(
-        (cartItem) => cartItem.productId == item.productId && cartItem.size == item.size,
-      );
-      
-      await FirebaseDbService.updateUserCart(
-        authController.currentUser!.id,
-        _cartItems,
-      );
-      
-      Get.snackbar('Success', 'Item removed from cart');
-    } catch (e) {
-      debugPrint('Error removing from cart: $e');
-      Get.snackbar('Error', 'Failed to remove item from cart');
-    }
-  }
-  
-  Future<void> clearCart() async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) return;
-    
-    try {
-      await FirebaseDbService.clearUserCart(authController.currentUser!.id);
-      _cartItems.clear();
-    } catch (e) {
-      debugPrint('Error clearing cart: $e');
-    }
-  }
-  
-  // ==== WISHLIST ====
-  
+
   Future<void> loadUserWishlist() async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) {
-      debugPrint('No user logged in, cannot load wishlist');
-      _wishlistIds.clear(); // Ensure wishlist is cleared when no user
-      return;
-    }
-    
     try {
-      debugPrint('Loading wishlist for user: ${authController.currentUser!.id} (${authController.currentUser!.email})');
-      List<String> wishlistIds = await FirebaseDbService.getUserWishlist(
-        authController.currentUser!.id,
-      );
-      debugPrint('Loaded ${wishlistIds.length} wishlist IDs from Firestore: $wishlistIds');
+      final authController = Get.find<AuthController>();
+      final user = authController.currentUser;
+      
+      if (user == null) {
+        _wishlistIds.clear();
+        return;
+      }
+
+      List<String> wishlistIds = await FirebaseDbService.getUserWishlist(user.id);
       _wishlistIds.assignAll(wishlistIds);
-      debugPrint('Current wishlist in controller after loading: $_wishlistIds');
+      debugPrint('Loaded ${wishlistIds.length} wishlist items for user ${user.email}');
     } catch (e) {
-      debugPrint('Error loading wishlist: $e');
-      _wishlistIds.clear(); // Clear wishlist on error
+      debugPrint('Error loading user wishlist: $e');
     }
   }
-  
+
+  bool isInWishlist(String productId) {
+    return _wishlistIds.contains(productId);
+  }
+
   Future<void> toggleWishlist(String productId) async {
-    final authController = Get.find<AuthController>();
-    if (authController.currentUser == null) {
-      Get.snackbar('Error', 'Please login to manage wishlist');
-      return;
-    }
-    
     try {
-      debugPrint('Toggling wishlist for product: $productId');
-      debugPrint('User: ${authController.currentUser!.id} (${authController.currentUser!.email})');
-      debugPrint('Current wishlist before toggle: $_wishlistIds');
+      final authController = Get.find<AuthController>();
+      final user = authController.currentUser;
       
+      if (user == null) {
+        Get.snackbar('Error', 'Please sign in to use wishlist');
+        return;
+      }
+
       if (_wishlistIds.contains(productId)) {
-        await FirebaseDbService.removeFromWishlist(
-          authController.currentUser!.id,
-          productId,
-        );
+        // Remove from wishlist
         _wishlistIds.remove(productId);
-        debugPrint('Removed from wishlist. New list: $_wishlistIds');
-        Get.snackbar('Success', 'Item removed from wishlist');
+        await FirebaseDbService.removeFromWishlist(user.id, productId);
+        Get.snackbar('Removed', 'Item removed from wishlist',
+            backgroundColor: Colors.grey[800],
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2));
       } else {
-        await FirebaseDbService.addToWishlist(
-          authController.currentUser!.id,
-          productId,
-        );
+        // Add to wishlist
         _wishlistIds.add(productId);
-        debugPrint('Added to wishlist. New list: $_wishlistIds');
-        Get.snackbar('Success', 'Item added to wishlist');
+        await FirebaseDbService.addToWishlist(user.id, productId);
+        Get.snackbar('Added', 'Item added to wishlist',
+            backgroundColor: Colors.pink,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2));
       }
     } catch (e) {
       debugPrint('Error toggling wishlist: $e');
       Get.snackbar('Error', 'Failed to update wishlist');
     }
   }
-  
-  /// Force refresh the current user's wishlist data
-  Future<void> refreshWishlist() async {
-    debugPrint('Force refreshing wishlist...');
-    await loadUserWishlist();
-  }
-
-  bool isInWishlist(String productId) {
-    return _wishlistIds.contains(productId);
-  }
-  
-  /// Debug method to check current user and wishlist state
-  void debugWishlistState() {
-    final authController = Get.find<AuthController>();
-    debugPrint('=== WISHLIST DEBUG STATE ===');
-    debugPrint('Current user: ${authController.currentUser?.email ?? 'None'}');
-    debugPrint('Current user ID: ${authController.currentUser?.id ?? 'None'}');
-    debugPrint('Wishlist IDs in controller: $_wishlistIds');
-    debugPrint('Wishlist products count: ${wishlistProducts.length}');
-    debugPrint('Total products loaded: ${_products.length}');
-    debugPrint('============================');
-  }
 
   // ==== UTILITY METHODS ====
-  
+
   Product? getProductById(String id) {
     try {
       return _products.firstWhere((product) => product.id == id);
@@ -387,12 +276,19 @@ class ProductController extends GetxController {
       return null;
     }
   }
-  
-  List<Product> getProductsByCategory(String category) {
-    return _products.where((product) => product.category == category).toList();
+
+  /// NOW STRICT: treat input as categoryKey
+  List<Product> getProductsByCategory(String categoryKey) {
+    final key = categoryKey.trim().toUpperCase();
+    return _products
+        .where((product) =>
+            product.categoryKey.trim().toUpperCase() == key)
+        .toList();
   }
-  
+
   List<Product> getWishlistProducts() {
-    return _products.where((product) => _wishlistIds.contains(product.id)).toList();
+    return _products
+        .where((product) => _wishlistIds.contains(product.id))
+        .toList();
   }
 }

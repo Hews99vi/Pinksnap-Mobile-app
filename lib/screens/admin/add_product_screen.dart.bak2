@@ -101,7 +101,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       price: double.parse(_priceController.text),
       images: _imageUrlController.text.isNotEmpty ? [_imageUrlController.text] : [],
       category: _selectedCategory!,
-      categoryKey: _selectedCategory!.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '_'),
+      categoryKey: selectedCategory.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '_'),
       sizes: _selectedSizes,
       colors: _selectedColors,
       stock: stock,
