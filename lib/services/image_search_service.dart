@@ -22,36 +22,58 @@ class ImageSearchService {
   // Lowered from 0.78 to 0.55 for better real-world photo matching
   static const double _confidenceThreshold = 0.55;
 
+  /// Normalize label to ML key format: "Long sleeve frock" -> "LONG_SLEEVE_FROCK"
+  String _normalizeLabelToKey(String label) {
+    final raw = label.trim().toUpperCase();
+    
+    // Normalize spaces/hyphens first
+    final norm = raw.replaceAll(RegExp(r'[\s\-]+'), '_');
+    
+    // ✅ Alias fixes for Teachable Machine label drift (singular vs plural)
+    switch (norm) {
+      case 'STRAPLESS_FROCKS':
+        return 'STRAPLESS_FROCK';
+      case 'STRAP_DRESSES':
+        return 'STRAP_DRESS';
+      case 'HOODIES':
+        return 'HOODIE';
+      case 'T_SHIRTS':
+        return 'T_SHIRT';
+      case 'LONG_SLEEVE_FROCKS':
+        return 'LONG_SLEEVE_FROCK';
+      default:
+        return norm;
+    }
+  }
+
   /// Build categoryKey index only once (fast lookup later)
   void _buildIndexIfNeeded() {
     if (_indexBuilt) return;
 
-    debugPrint('🔥 ImageSearchService ProductController instance = ${_productController.hashCode}');
-    debugPrint('🔥 ProductController.products length = ${_productController.products.length}');
-
-    _indexByCategoryKey = {};
     final allProducts = _productController.products;
-
     debugPrint('🔥 INDEX BUILD allProducts.length = ${allProducts.length}');
 
-    for (final product in allProducts) {
-      final key = product.categoryKey.trim().toUpperCase();
-      if (key.isEmpty) continue;
+    _indexByCategoryKey.clear();
 
-      (_indexByCategoryKey[key] ??= []).add(product);
+    for (final p in allProducts) {
+      final rawKey = p.categoryKey;
+      final key = _normalizeLabelToKey(rawKey); // normalize here too
+      
+      if (key.isEmpty) {
+        debugPrint('⚠️ Product ${p.name} has empty categoryKey');
+        continue;
+      }
+      
+      _indexByCategoryKey.putIfAbsent(key, () => []).add(p);
     }
 
+    debugPrint('🔥 INDEX KEYS = ${_indexByCategoryKey.keys.toList()}');
+    debugPrint('🔥 INDEX COUNTS:');
+    _indexByCategoryKey.forEach((key, products) {
+      debugPrint('   $key: ${products.length} products');
+    });
+    
     _indexBuilt = true;
-
-    debugPrint('🔥 INDEX BUILD keys = ${_indexByCategoryKey.keys.toList()}');
-    // TEMP DEBUG LOGS
-    Logger.info("INDEX BUILD products count = ${allProducts.length}");
-    Logger.info("INDEX BUILD keys = ${_indexByCategoryKey.keys.toList()}");
-
-    Logger.info(
-      'Category index built with ${_indexByCategoryKey.length} keys '
-      'from ${allProducts.length} products',
-    );
   }
 
   /// Normalize confidence to 0..1
@@ -62,86 +84,70 @@ class ImageSearchService {
   }
 
   Future<List<Product>> searchSimilarProducts(File imageFile) async {
-    debugPrint('🔥🔥🔥 searchSimilarProducts CALLED');
-    debugPrint('🔥 ImageFile: ${imageFile.path}');
+    debugPrint('🔥 searchSimilarProducts CALLED');
+    
     try {
-      Logger.info('Starting STRICT image search for similar products');
-
-      // Ensure model is loaded
+      // 1) Classify
       if (!_tfliteService.isModelLoaded) {
-        Logger.info('Model not loaded, loading now...');
         await _tfliteService.loadModel();
       }
-
-      // Classify the image using TFLite model
+      
       final predictions = await _tfliteService.classifyImage(imageFile);
       lastPredictions = predictions;
-
+      
       debugPrint('🔥 PREDICTIONS RAW = $predictions');
 
       if (predictions.isEmpty) {
         debugPrint('🔥 PREDICTIONS EMPTY => returning []');
-        Logger.warning('No predictions returned from model');
         return [];
       }
 
-      // Build product index once
-      _buildIndexIfNeeded();
+      final top = predictions.first;
+      final rawLabel = (top['label'] as String?) ?? '';
+      final predictedLabel = _normalizeLabelToKey(rawLabel);
+      final confidence = _normalizeConfidence(top['confidence']);
 
-      // Top prediction
-      final topPrediction = predictions.first;
-      final predictedLabel =
-          (topPrediction['label'] as String).trim().toUpperCase();
-      final confidence = _normalizeConfidence(topPrediction['confidence']);
-
-      debugPrint('🔥 TOP LABEL = $predictedLabel');
-      debugPrint('🔥 TOP CONF  = $confidence');
+      debugPrint('🔥 TOP RAW LABEL = $rawLabel');
+      debugPrint('🔥 TOP LABEL KEY = $predictedLabel');
+      debugPrint('🔥 TOP CONF = $confidence');
       debugPrint('🔥 THRESHOLD = $_confidenceThreshold');
 
-      // TEMP DEBUG LOGS
-      double norm(num v) => v > 1 ? v / 100.0 : v.toDouble();
-      Logger.info("CONF NORM = ${norm(topPrediction['confidence'] as num)}");
-      Logger.info("LOOKUP label = '$predictedLabel'");
-      Logger.info("LOOKUP available keys = ${_indexByCategoryKey.keys.toList()}");
-
-      Logger.info(
-        'Top prediction: $predictedLabel '
-        '(${(confidence * 100).toStringAsFixed(1)}%)',
-      );
-
-      // Confidence gate to avoid wrong suggestions
-      if (confidence < _confidenceThreshold) {
-        debugPrint('🔥 CONFIDENCE GATE: $confidence < $_confidenceThreshold => returning []');
-        Logger.info(
-          'Confidence ${(confidence * 100).toStringAsFixed(1)}% '
-          'below threshold ${(_confidenceThreshold * 100).toStringAsFixed(0)}%, '
-          'returning no suggestions.',
-        );
+      if (predictedLabel.isEmpty) {
+        debugPrint('🔥 predictedLabel EMPTY after normalize => returning []');
         return [];
       }
-      debugPrint('🔥 CONFIDENCE OK: $confidence >= $_confidenceThreshold');
 
-      // Strict lookup by categoryKey = predictedLabel
+      // 2) Ensure index is built
+      _buildIndexIfNeeded();
+
+      // 3) Compute matches BEFORE confidence gate
       final matches = _indexByCategoryKey[predictedLabel] ?? [];
       debugPrint('🔥 MATCHES for $predictedLabel = ${matches.length}');
 
-      if (matches.isEmpty) {
-        Logger.warning(
-          'No products found for categoryKey: $predictedLabel '
-          '(category may not exist in shop yet)',
-        );
+      // 4) Confidence gate with fallback
+      if (confidence < _confidenceThreshold) {
+        debugPrint('🔥 Low confidence but we will fallback if matches exist');
+        if (matches.isNotEmpty) {
+          debugPrint('🔥 Returning matches despite low confidence');
+          matches.shuffle();
+          return matches.take(10).toList();
+        }
+        debugPrint('🔥 Low confidence + no matches => returning []');
         return [];
       }
 
-      // Shuffle for variety and limit to 10
+      // 5) Normal return
+      debugPrint('🔥 High confidence - returning matches');
+      if (matches.isEmpty) {
+        debugPrint('🔥 No products in catalog for $predictedLabel');
+        return [];
+      }
+      
       matches.shuffle();
-      final results = matches.take(10).toList();
-
-      Logger.info(
-        'Returning ${results.length} products for categoryKey: $predictedLabel',
-      );
-      return results;
+      return matches.take(10).toList();
+      
     } catch (e) {
+      debugPrint('🔥 ERROR: $e');
       throw Exception('Error searching similar products: ${e.toString()}');
     }
   }
