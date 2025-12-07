@@ -15,7 +15,7 @@ class ImageSearchService {
   List<Map<String, dynamic>>? lastPredictions;
 
   // Build-once index: categoryKey -> products
-  Map<String, List<Product>> _indexByCategoryKey = {};
+  final Map<String, List<Product>> _indexByCategoryKey = {};
   bool _indexBuilt = false;
 
   // Tune this after real-world testing
@@ -29,21 +29,24 @@ class ImageSearchService {
     // Normalize spaces/hyphens first
     final norm = raw.replaceAll(RegExp(r'[\s\-]+'), '_');
     
-    // ✅ Alias fixes for Teachable Machine label drift (singular vs plural)
-    switch (norm) {
-      case 'STRAPLESS_FROCKS':
-        return 'STRAPLESS_FROCK';
-      case 'STRAP_DRESSES':
-        return 'STRAP_DRESS';
-      case 'HOODIES':
-        return 'HOODIE';
-      case 'T_SHIRTS':
-        return 'T_SHIRT';
-      case 'LONG_SLEEVE_FROCKS':
-        return 'LONG_SLEEVE_FROCK';
-      default:
-        return norm;
-    }
+    // ✅ Enhanced alias map for all potential plural/variant forms
+    const aliasMap = {
+      'STRAPLESS_FROCKS': 'STRAPLESS_FROCK',
+      'STRAP_DRESSES': 'STRAP_DRESS',
+      'HOODIES': 'HOODIE',
+      'T_SHIRTS': 'T_SHIRT',
+      'LONG_SLEEVE_FROCKS': 'LONG_SLEEVE_FROCK',
+      'HATS': 'HAT',
+      'SHIRTS': 'SHIRT',
+      'SHORT': 'SHORTS',  // singular -> plural
+      'SHOE': 'SHOES',    // singular -> plural
+      'PANT': 'PANTS',    // singular -> plural
+      'TOPS': 'TOP',      // plural -> singular
+    };
+    
+    final result = aliasMap[norm] ?? norm;
+    debugPrint('🔥 NORMALIZE: "$label" -> "$raw" -> "$norm" -> "$result"');
+    return result;
   }
 
   /// Build categoryKey index only once (fast lookup later)

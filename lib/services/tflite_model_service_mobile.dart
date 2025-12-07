@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import '../utils/logger.dart';
@@ -32,7 +33,9 @@ class TFLiteModelService {
 
       try {
         // Load the TFLite model from assets
-        _interpreter = await Interpreter.fromAsset('assets/models/model_unquant.tflite');
+        const modelPath = 'assets/models/model_unquant.tflite';
+        debugPrint('🔥 LOADING MODEL PATH = $modelPath');
+        _interpreter = await Interpreter.fromAsset(modelPath);
         _modelLoaded = true;
         await _loadLabels();
         
@@ -61,7 +64,9 @@ class TFLiteModelService {
   /// Load labels from the labels.txt file
   Future<void> _loadLabels() async {
     try {
-      final labelsData = await rootBundle.loadString('assets/models/labels.txt');
+      const labelsPath = 'assets/models/labels.txt';
+      debugPrint('🔥 LOADING LABELS PATH = $labelsPath');
+      final labelsData = await rootBundle.loadString(labelsPath);
       _labels = labelsData
           .split('\n')
           .where((line) => line.trim().isNotEmpty)
@@ -72,6 +77,7 @@ class TFLiteModelService {
           })
           .toList();
       
+      debugPrint('🔥 LABELS LOADED = $_labels');
       Logger.info('Loaded ${_labels.length} labels: $_labels');
     } catch (e) {
       Logger.error('Error loading labels: $e');
@@ -209,6 +215,13 @@ class TFLiteModelService {
     double threshold
   ) {
     return predictions.where((p) => p['confidence'] >= threshold).toList();
+  }
+
+  /// Force reload of model and labels (clears any cached state)
+  Future<void> reloadModel() async {
+    debugPrint('🔥 RELOADING MODEL - clearing cached state');
+    await dispose();
+    await loadModel();
   }
 
   /// Dispose and close the model
