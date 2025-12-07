@@ -239,7 +239,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   border: OutlineInputBorder(),
                 ),
                 hint: const Text('Select a category'),
-                items: categoryController.categories.map((category) {
+                items: categoryController.categoryNames.map((category) {
                   return DropdownMenuItem<String>(
                     value: category,
                     child: Text(category),

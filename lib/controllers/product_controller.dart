@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
@@ -109,9 +108,11 @@ class ProductController extends GetxController {
 
   Future<void> loadCategories() async {
     try {
-      List<String> loadedCategories =
-          await FirebaseDbService.getCategories();
-      _categories.assignAll(loadedCategories);
+      // Delegate to CategoryController for category management
+      final categoryController = Get.find<CategoryController>();
+      await categoryController.loadCategories();
+      // Update local categories list for backward compatibility
+      _categories.assignAll(categoryController.categoryNames);
     } catch (e) {
       debugPrint('Error loading categories: $e');
     }

@@ -243,13 +243,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
           // Categories List
           Expanded(
             child: Obx(() {
-              if (categoryController.isLoading && categoryController.categories.isEmpty) {
+              if (categoryController.isLoading && categoryController.categoryNames.isEmpty) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );
               }
 
-              if (categoryController.categories.isEmpty) {
+              if (categoryController.categoryNames.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -285,9 +285,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 onRefresh: () => categoryController.loadCategories(),
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: categoryController.categories.length,
+                  itemCount: categoryController.categoryNames.length,
                   itemBuilder: (context, index) {
-                    final category = categoryController.categories[index];
+                    final category = categoryController.categoryNames[index];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(

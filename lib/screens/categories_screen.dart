@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../utils/responsive.dart';
 import '../controllers/product_controller.dart';
+import '../controllers/category_controller.dart';
 import 'category_products_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
   late AnimationController _animationController;
   int? _hoveredIndex;
   final ProductController productController = Get.find<ProductController>();
+  final CategoryController categoryController = Get.find<CategoryController>();
 
   @override
   void initState() {
@@ -123,18 +125,47 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
             maxWidth: Responsive.isDesktop(context) ? 1400.0 : double.infinity,
           ),
           child: Obx(() {
-            // Get available categories from ProductController
-            final availableCategories = productController.categories;
+            // Get visible categories from CategoryController
+            final visibleCategories = categoryController.visibleShopCategories;
             final categoryStyles = getCategoryStyles();
             
-            if (availableCategories.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(),
+            debugPrint('Displaying ${visibleCategories.length} visible categories in Shop by Category');
+            
+            if (visibleCategories.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.category_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No categories available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Categories are currently hidden by admin',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
             
             // Create category data with actual product counts
-            final categories = availableCategories.map((categoryName) {
+            final categories = visibleCategories.map((category) {
+              final categoryName = category.name;
               final productCount = productController.getProductsByCategory(categoryName).length;
               final style = categoryStyles[categoryName] ?? categoryStyles['default']!;
               

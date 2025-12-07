@@ -2,15 +2,25 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../services/firebase_db_service.dart';
 import '../utils/category_seeder.dart';
+import '../models/category.dart' as models;
 
 class CategoryController extends GetxController {
   static CategoryController get instance => Get.find();
   
-  final RxList<String> _categories = <String>[].obs;
+  final RxList<models.Category> _categories = <models.Category>[].obs;
   final RxBool _isLoading = false.obs;
   
-  List<String> get categories => _categories;
+  List<models.Category> get categories => _categories;
   bool get isLoading => _isLoading.value;
+  
+  // Get only visible categories for Shop by Category section
+  List<models.Category> get visibleShopCategories => 
+      _categories.where((c) => c.isVisible)
+          .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  
+  // Get category names for backward compatibility
+  List<String> get categoryNames => _categories.map((c) => c.name).toList();
   
   @override
   void onInit() {
@@ -22,8 +32,9 @@ class CategoryController extends GetxController {
   Future<void> loadCategories() async {
     try {
       _isLoading.value = true;
-      List<String> loadedCategories = await FirebaseDbService.getCategories();
+      List<models.Category> loadedCategories = await FirebaseDbService.getCategories();
       _categories.assignAll(loadedCategories);
+      debugPrint('Loaded ${loadedCategories.length} categories');
     } catch (e) {
       debugPrint('Error loading categories: $e');
       Get.snackbar('Error', 'Failed to load categories');
@@ -53,13 +64,22 @@ class CategoryController extends GetxController {
       _isLoading.value = true;
       
       // Check if category already exists
-      if (_categories.contains(categoryName)) {
+      if (_categories.any((c) => c.name == categoryName)) {
         Get.snackbar('Error', 'Category already exists');
         return false;
       }
       
-      await FirebaseDbService.addCategory(categoryName);
-      _categories.add(categoryName);
+      final categoryKey = categoryName.toUpperCase().replaceAll(' ', '_');
+      final category = models.Category(
+        id: categoryKey,  // Use key as document ID
+        name: categoryName,
+        key: categoryKey,
+        isVisible: true,
+        sortOrder: _categories.length,
+      );
+      
+      await FirebaseDbService.addCategory(category);
+      _categories.add(category);
       Get.snackbar('Success', 'Category added successfully');
       return true;
     } catch (e) {
@@ -76,18 +96,30 @@ class CategoryController extends GetxController {
     try {
       _isLoading.value = true;
       
+      // Find the old category
+      final oldCategory = _categories.firstWhereOrNull((c) => c.name == oldName);
+      if (oldCategory == null) {
+        Get.snackbar('Error', 'Category not found');
+        return false;
+      }
+      
       // Check if new name already exists (and it's different from old name)
-      if (oldName != newName && _categories.contains(newName)) {
+      if (oldName != newName && _categories.any((c) => c.name == newName)) {
         Get.snackbar('Error', 'Category name already exists');
         return false;
       }
       
-      await FirebaseDbService.updateCategory(oldName, newName);
+      final newCategory = oldCategory.copyWith(
+        name: newName,
+        key: newName.toUpperCase().replaceAll(' ', '_'),
+      );
+      
+      await FirebaseDbService.updateCategory(oldCategory, newCategory);
       
       // Update local list
-      int index = _categories.indexOf(oldName);
+      int index = _categories.indexWhere((c) => c.name == oldName);
       if (index != -1) {
-        _categories[index] = newName;
+        _categories[index] = newCategory;
       }
       
       Get.snackbar('Success', 'Category updated successfully');
@@ -101,10 +133,46 @@ class CategoryController extends GetxController {
     }
   }
   
+  // Toggle category visibility
+  Future<bool> toggleCategoryVisibility(models.Category category, bool isVisible) async {
+    try {
+      _isLoading.value = true;
+      
+      await FirebaseDbService.updateCategoryVisibility(category, isVisible);
+      
+      // Update local list
+      int index = _categories.indexWhere((c) => c.name == category.name);
+      if (index != -1) {
+        _categories[index] = category.copyWith(isVisible: isVisible);
+      }
+      
+      debugPrint('Toggled visibility for ${category.name}: $isVisible');
+      Get.snackbar(
+        'Success', 
+        'Category ${isVisible ? "shown" : "hidden"} successfully',
+        duration: const Duration(seconds: 2),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Error toggling category visibility: $e');
+      Get.snackbar('Error', 'Failed to update category visibility');
+      return false;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+  
   // Delete a category
   Future<bool> deleteCategory(String categoryName) async {
     try {
       _isLoading.value = true;
+      
+      // Find the category
+      final category = _categories.firstWhereOrNull((c) => c.name == categoryName);
+      if (category == null) {
+        Get.snackbar('Error', 'Category not found');
+        return false;
+      }
       
       // Check if category has products
       bool hasProducts = await FirebaseDbService.categoryHasProducts(categoryName);
@@ -117,8 +185,8 @@ class CategoryController extends GetxController {
         return false;
       }
       
-      await FirebaseDbService.deleteCategory(categoryName);
-      _categories.remove(categoryName);
+      await FirebaseDbService.deleteCategory(category);
+      _categories.removeWhere((c) => c.name == categoryName);
       Get.snackbar('Success', 'Category deleted successfully');
       return true;
     } catch (e) {

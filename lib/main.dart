@@ -4,14 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:pinksmapmobile/utils/theme.dart';
 import 'screens/login_screen.dart';
-import 'controllers/auth_controller.dart';
-import 'controllers/product_controller.dart';
-import 'controllers/cart_controller.dart';
-import 'controllers/order_controller.dart';
-import 'controllers/image_search_controller.dart';
+import 'bindings/app_binding.dart';
 import 'services/stripe_service.dart';
 import 'services/tflite_model_service.dart';
-import 'services/image_search_service.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'utils/logger.dart';
@@ -54,24 +49,9 @@ void main() async {
         // Continue without Stripe
       }
       
-      // Initialize controllers in correct order
-      Logger.info('Initializing controllers');
-      try {
-        // ✅ Register core controllers as permanent singletons
-        Get.put(AuthController(), permanent: true);
-        Get.put(ProductController(), permanent: true);
-        Get.put(CartController(), permanent: true);
-        Get.put(OrderController(), permanent: true);
-        
-        // ✅ Register ImageSearchService after ProductController
-        Get.put(ImageSearchService(), permanent: true);
-        
-        Get.put(ImageSearchController(), permanent: true);
-        Logger.info('Controllers initialized successfully');
-      } catch (e) {
-        Logger.error('Controller initialization failed', error: e);
-        // Continue with minimal functionality
-      }
+      // Controllers are now registered via AppBinding in GetMaterialApp
+      // No manual Get.put() calls needed here
+      Logger.info('Controllers will be initialized via AppBinding');
       
       // Initialize TFLite model (only on mobile platforms)
       Logger.info('Initializing TFLite model');
@@ -148,6 +128,7 @@ class _PinkSnapAppState extends State<PinkSnapApp> {
     return GetMaterialApp(
       title: 'PinkSnap',
       theme: AppTheme.lightTheme,
+      initialBinding: AppBinding(), // ✅ Ensures core controllers are registered
       // Skip internal loading screen on web - HTML handles it
       home: kIsWeb
           ? (_errorMessage.isNotEmpty 

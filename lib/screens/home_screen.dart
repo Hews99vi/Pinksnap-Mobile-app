@@ -9,6 +9,7 @@ import '../widgets/designer_categories_section.dart';
 import '../widgets/image_search_promo_card.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/cart_controller.dart';
+import '../controllers/category_controller.dart';
 import '../utils/responsive.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
@@ -23,25 +24,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> categories = [
-    'All',
-    'Dresses',
-    'Tops',
-    'Pants',
-    'Skirts',
-    'Accessories'
-  ];
-
   int _selectedCategoryIndex = 0;
   final ProductController productController = Get.find();
   final CartController cartController = Get.put(CartController());
+  final CategoryController categoryController = Get.find();
+  
+  // Get visible categories with 'All' prepended
+  List<String> get visibleCategoryNames {
+    final categories = ['All', ...categoryController.visibleShopCategories.map((c) => c.name)];
+    return categories;
+  }
 
   List<Product> get filteredProducts {
     if (_selectedCategoryIndex == 0) {
       return productController.products;
     }
     // Convert UI category name to strict categoryKey for filtering
-    final selectedCategory = categories[_selectedCategoryIndex];
+    final selectedCategory = visibleCategoryNames[_selectedCategoryIndex];
     final categoryKey = selectedCategory.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '_');
     return productController.products
         .where((product) => product.categoryKey.trim().toUpperCase() == categoryKey)
@@ -291,9 +290,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   SizedBox(
                     height: 44,
-                    child: ListView.builder(
+                    child: Obx(() => ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: categories.length,
+                      itemCount: visibleCategoryNames.length,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemBuilder: (context, index) {
                         final isSelected = _selectedCategoryIndex == index;
@@ -335,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         : null,
                                   ),
                                   child: Text(
-                                    categories[index],
+                                    visibleCategoryNames[index],
                                     style: TextStyle(
                                       color: isSelected ? Colors.white : Colors.grey[700],
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -348,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       },
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -376,17 +375,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
+                      Obx(() => Text(
                         _selectedCategoryIndex == 0
                             ? 'All Products'
-                            : categories[_selectedCategoryIndex],
+                            : visibleCategoryNames[_selectedCategoryIndex],
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                           letterSpacing: -0.5,
                         ),
-                      ),
+                      )),
                     ],
                   ),
                   Obx(() => Text(

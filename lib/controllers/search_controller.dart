@@ -36,7 +36,7 @@ class SearchController extends GetxController {
       // Try to get from CategoryController first
       if (Get.isRegistered<CategoryController>()) {
         final catController = Get.find<CategoryController>();
-        return ['All', ...catController.categories];
+        return ['All', ...catController.categories.map((c) => c.name)];
       }
     } catch (e) {
       // Fallback silently

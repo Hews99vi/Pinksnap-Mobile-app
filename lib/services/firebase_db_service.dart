@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
+import '../models/category.dart' as models;
 
 class FirebaseDbService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -111,78 +112,122 @@ class FirebaseDbService {
   // ==== CATEGORIES ====
 
   // Get all categories
-  static Future<List<String>> getCategories() async {
+  static Future<List<models.Category>> getCategories() async {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection(_categoriesCollection)
           .get();
 
       return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .map((data) => data['name'] as String)
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return models.Category.fromDoc(doc.id, data);
+          })
           .toList();
     } catch (e) {
+      debugPrint('Error getting categories: $e');
       throw Exception('Failed to get categories: $e');
     }
   }
 
   // Add a new category
-  static Future<void> addCategory(String categoryName) async {
+  static Future<void> addCategory(models.Category category) async {
     try {
+      // Use category.id if provided, otherwise use key, otherwise generate from name
+      final docId = category.id.isNotEmpty 
+          ? category.id
+          : (category.key.isNotEmpty 
+              ? category.key 
+              : category.name.toLowerCase().replaceAll(' ', '_'));
+      
       await _firestore
           .collection(_categoriesCollection)
-          .doc(categoryName.toLowerCase().replaceAll(' ', '_'))
+          .doc(docId)
           .set({
-        'name': categoryName,
+        ...category.toJson(),
         'createdAt': FieldValue.serverTimestamp(),
       });
+      
+      debugPrint('✅ Added category: ${category.name} (id: $docId) with visibility: ${category.isVisible}');
     } catch (e) {
+      debugPrint('❌ Error adding category: $e');
       throw Exception('Failed to add category: $e');
     }
   }
 
   // Update a category
-  static Future<void> updateCategory(String oldName, String newName) async {
+  static Future<void> updateCategory(models.Category oldCategory, models.Category newCategory) async {
     try {
+      // Use document IDs
+      final oldDocId = oldCategory.id;
+      final newDocId = newCategory.id;
+      
       // Create new category document
       await _firestore
           .collection(_categoriesCollection)
-          .doc(newName.toLowerCase().replaceAll(' ', '_'))
+          .doc(newDocId)
           .set({
-        'name': newName,
+        ...newCategory.toJson(),
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Delete old category document
-      await _firestore
-          .collection(_categoriesCollection)
-          .doc(oldName.toLowerCase().replaceAll(' ', '_'))
-          .delete();
+      // Delete old category document if ID changed
+      if (oldDocId != newDocId) {
+        await _firestore
+            .collection(_categoriesCollection)
+            .doc(oldDocId)
+            .delete();
+      }
 
       // Update all products with old category to new category
-      QuerySnapshot products = await _firestore
-          .collection(_productsCollection)
-          .where('category', isEqualTo: oldName)
-          .get();
+      if (oldCategory.name != newCategory.name) {
+        QuerySnapshot products = await _firestore
+            .collection(_productsCollection)
+            .where('category', isEqualTo: oldCategory.name)
+            .get();
 
-      WriteBatch batch = _firestore.batch();
-      for (QueryDocumentSnapshot product in products.docs) {
-        batch.update(product.reference, {'category': newName});
+        WriteBatch batch = _firestore.batch();
+        for (QueryDocumentSnapshot product in products.docs) {
+          batch.update(product.reference, {'category': newCategory.name});
+        }
+        await batch.commit();
       }
-      await batch.commit();
+      
+      debugPrint('Updated category: ${oldCategory.name} -> ${newCategory.name}');
     } catch (e) {
+      debugPrint('Error updating category: $e');
       throw Exception('Failed to update category: $e');
     }
   }
 
-  // Delete a category
-  static Future<void> deleteCategory(String categoryName) async {
+  // Update category visibility
+  static Future<void> updateCategoryVisibility(models.Category category, bool isVisible) async {
     try {
       await _firestore
           .collection(_categoriesCollection)
-          .doc(categoryName.toLowerCase().replaceAll(' ', '_'))
-          .delete();
+          .doc(category.id)  // Use Firestore document ID
+          .update({
+        'isVisible': isVisible,
+      });
+      
+      debugPrint('✅ Updated visibility for ${category.name} (id: ${category.id}): $isVisible');
     } catch (e) {
+      debugPrint('❌ Error updating category visibility for ${category.name} (id: ${category.id}): $e');
+      throw Exception('Failed to update category visibility: $e');
+    }
+  }
+
+  // Delete a category
+  static Future<void> deleteCategory(models.Category category) async {
+    try {
+      await _firestore
+          .collection(_categoriesCollection)
+          .doc(category.id)  // Use document ID
+          .delete();
+      
+      debugPrint('✅ Deleted category: ${category.name} (id: ${category.id})');
+    } catch (e) {
+      debugPrint('❌ Error deleting category: $e');
       throw Exception('Failed to delete category: $e');
     }
   }
