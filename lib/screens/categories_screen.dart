@@ -34,6 +34,76 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
     super.dispose();
   }
 
+  // Dynamic style helper - generates colorful gradient for any category
+  Map<String, dynamic> _styleForCategory(String name, String key) {
+    final styles = getCategoryStyles();
+    if (styles.containsKey(name)) return styles[name]!;
+
+    // ✅ Dynamic fallback palette (no more gray tiles)
+    const palettes = [
+      [Color(0xFFFF6B9D), Color(0xFFFEC1CC)], // pink
+      [Color(0xFF9C27B0), Color(0xFFCE93D8)], // purple
+      [Color(0xFF2196F3), Color(0xFF90CAF9)], // blue
+      [Color(0xFFFF9800), Color(0xFFFFCC80)], // orange
+      [Color(0xFF4CAF50), Color(0xFFA5D6A7)], // green
+      [Color(0xFF00BCD4), Color(0xFF80DEEA)], // cyan
+      [Color(0xFFFFC107), Color(0xFFFFECB3)], // amber
+      [Color(0xFF3F51B5), Color(0xFF9FA8DA)], // indigo
+      [Color(0xFFE91E63), Color(0xFFF48FB1)], // pink variant
+      [Color(0xFF673AB7), Color(0xFFB39DDB)], // deep purple
+      [Color(0xFF009688), Color(0xFF80CBC4)], // teal
+      [Color(0xFF8BC34A), Color(0xFFC5E1A5)], // light green
+    ];
+
+    final index = key.hashCode.abs() % palettes.length;
+    final gradient = palettes[index];
+
+    return {
+      'icon': _getIconForCategory(name, key),
+      'gradient': gradient,
+    };
+  }
+
+  // Dynamic icon helper based on category name/key
+  IconData _getIconForCategory(String name, String key) {
+    final nameLower = name.toLowerCase();
+    final keyUpper = key.toUpperCase();
+
+    // Check common patterns
+    if (nameLower.contains('dress') || nameLower.contains('frock') || keyUpper.contains('DRESS') || keyUpper.contains('FROCK')) {
+      return Icons.checkroom_rounded;
+    }
+    if (nameLower.contains('top') || nameLower.contains('shirt') || keyUpper.contains('TOP') || keyUpper.contains('SHIRT')) {
+      return Icons.shopping_bag_rounded;
+    }
+    if (nameLower.contains('pant') || nameLower.contains('jean') || keyUpper.contains('PANT') || keyUpper.contains('JEAN')) {
+      return Icons.dry_cleaning_rounded;
+    }
+    if (nameLower.contains('skirt') || keyUpper.contains('SKIRT')) {
+      return Icons.checkroom_outlined;
+    }
+    if (nameLower.contains('shoe') || nameLower.contains('boot') || keyUpper.contains('SHOE') || keyUpper.contains('BOOT')) {
+      return Icons.settings_accessibility_rounded;
+    }
+    if (nameLower.contains('bag') || keyUpper.contains('BAG')) {
+      return Icons.work_rounded;
+    }
+    if (nameLower.contains('hat') || nameLower.contains('cap') || keyUpper.contains('HAT')) {
+      return Icons.emergency_rounded;
+    }
+    if (nameLower.contains('access') || nameLower.contains('jewel') || keyUpper.contains('ACCESS')) {
+      return Icons.diamond_rounded;
+    }
+    if (nameLower.contains('coat') || nameLower.contains('jacket') || nameLower.contains('hoodie') || keyUpper.contains('COAT') || keyUpper.contains('HOODIE')) {
+      return Icons.ac_unit_rounded;
+    }
+    if (nameLower.contains('sweater') || keyUpper.contains('SWEATER')) {
+      return Icons.checkroom;
+    }
+    
+    return Icons.category_rounded; // default fallback
+  }
+
   // Define category icons and gradients
   Map<String, Map<String, dynamic>> getCategoryStyles() {
     return {
@@ -129,7 +199,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
             // ✅ CRITICAL: Access both reactive sources so Obx rebuilds when either changes
             final visibleCategories = categoryController.visibleShopCategories;
             final allProducts = productController.productsRx.toList(); // ✅ Access RxList to trigger reactivity
-            final categoryStyles = getCategoryStyles();
             
             debugPrint('🔄 Building categories screen: ${visibleCategories.length} categories, ${allProducts.length} products');
             
@@ -188,7 +257,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
                   .where((p) => p.categoryKey == normalizedKey)
                   .length;
               
-              final style = categoryStyles[categoryName] ?? categoryStyles['default']!;
+              // ✅ Get style with dynamic colorful fallback (no gray tiles)
+              final style = _styleForCategory(categoryName, normalizedKey);
               
               // 🧩 Debug: Verify count calculation with normalization
               debugPrint('🧩 Tile "$categoryName" -> rawKey="${category.key}" normalized="$normalizedKey" count=$productCount');

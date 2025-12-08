@@ -279,7 +279,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       padding: EdgeInsets.all(Responsive.isDesktop(context) ? 20 : 16),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        childAspectRatio: 0.72, // Same as image search to avoid overflow
+                        childAspectRatio: Responsive.value<double>(
+                          context: context,
+                          mobile: 0.65,    // More height for mobile to prevent overflow
+                          tablet: 0.70,
+                          desktop: 0.75,
+                        ),
                         crossAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
                         mainAxisSpacing: Responsive.isDesktop(context) ? 20 : 16,
                       ),
