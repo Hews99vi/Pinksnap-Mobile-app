@@ -5,7 +5,10 @@
   "scripts": {
     "check": "node check-admin-claim.js",
     "set": "node set-and-verify-admin.js",
-    "set-admin": "node set-admin-claim.js"
+    "set-admin": "node set-admin-claim.js",
+    "migrate-images": "node migrate-images.js",
+    "list-pinterest": "node migrate-images.js --list",
+    "update-image": "node update-product-image.js"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"
