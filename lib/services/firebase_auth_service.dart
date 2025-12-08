@@ -57,6 +57,18 @@ class FirebaseAuthService {
       );
 
       if (userCredential.user != null) {
+        // Force refresh token to get latest custom claims (including admin claim)
+        await userCredential.user!.getIdToken(true);
+        
+        // Debug: Check if admin claim is present
+        final idTokenResult = await userCredential.user!.getIdTokenResult(true);
+        // ignore: avoid_print
+        print('🔐 Token Claims for $email:');
+        // ignore: avoid_print
+        print('   - admin claim: ${idTokenResult.claims?['admin']}');
+        // ignore: avoid_print
+        print('   - all claims: ${idTokenResult.claims}');
+        
         // Get user data from Firestore
         DocumentSnapshot userDoc = await _firestore
             .collection('users')

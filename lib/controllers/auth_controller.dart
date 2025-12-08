@@ -35,9 +35,17 @@ class AuthController extends GetxController {
       if (firebaseUser != null) {
         // User is signed in, get user data from Firestore
         try {
+          // Refresh token to ensure we have latest custom claims
+          await firebaseUser.getIdToken(true);
+          
+          // Debug: Log admin claim status
+          final idTokenResult = await firebaseUser.getIdTokenResult(true);
+          debugPrint('🔐 Admin claim in auth listener: ${idTokenResult.claims?['admin']}');
+          
           User? userData = await FirebaseAuthService.getUserData(firebaseUser.uid);
           if (userData != null) {
             debugPrint('Setting current user: ${userData.email} (ID: ${userData.id})');
+            debugPrint('User role from Firestore: ${userData.role}');
             _currentUser.value = userData;
             await _storage.write(key: 'user_data', value: userData.toJson().toString());
           }
@@ -66,6 +74,22 @@ class AuthController extends GetxController {
       
       if (user != null) {
         _currentUser.value = user;
+        
+        // Extra verification: Force token refresh and check admin claim
+        final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+        if (firebaseUser != null) {
+          final token = await firebaseUser.getIdTokenResult(true); // Force refresh
+          debugPrint('🔐 POST-LOGIN VERIFICATION:');
+          debugPrint('   Email: ${firebaseUser.email}');
+          debugPrint('   UID: ${firebaseUser.uid}');
+          debugPrint('   Admin claim: ${token.claims?['admin']}');
+          if (token.claims?['admin'] != true) {
+            debugPrint('   ⚠️  WARNING: Admin claim is NOT set! Run set-admin-claim.js script.');
+          } else {
+            debugPrint('   ✅ Admin claim verified successfully!');
+          }
+        }
+        
         return true;
       }
       return false;
@@ -140,6 +164,33 @@ class AuthController extends GetxController {
       return false;
     } finally {
       _isLoading.value = false;
+    }
+  }
+  
+  /// Force refresh ID token to get latest custom claims (e.g., admin claim)
+  /// Call this after setting admin claim via backend script
+  Future<void> forceTokenRefresh() async {
+    try {
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        debugPrint('🔄 Forcing token refresh...');
+        final token = await firebaseUser.getIdTokenResult(true); // Force refresh
+        debugPrint('🔐 FORCE REFRESH RESULT:');
+        debugPrint('   Email: ${firebaseUser.email}');
+        debugPrint('   Admin claim: ${token.claims?['admin']}');
+        
+        if (token.claims?['admin'] == true) {
+          debugPrint('   ✅ Admin claim verified!');
+        } else {
+          debugPrint('   ⚠️  Admin claim is NULL or FALSE');
+          debugPrint('   → Run: node set-admin-claim.js ${firebaseUser.uid}');
+          debugPrint('   → Then sign out and sign in again');
+        }
+      } else {
+        debugPrint('⚠️  No user logged in - cannot refresh token');
+      }
+    } catch (e) {
+      debugPrint('Token refresh error: $e');
     }
   }
 }
