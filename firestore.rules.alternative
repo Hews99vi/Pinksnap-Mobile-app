@@ -1,0 +1,82 @@
+# Firestore Security Rules - ALTERNATIVE (No Custom Claims Needed!)
+# 
+# This version uses the 'role' field from users/{userId} document instead of custom claims.
+# This is EASIER because:
+# - No backend script needed
+# - No custom claims to set
+# - No token refresh issues
+# - Works immediately when you change role in Firestore
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin using Firestore role
+    function isAdmin() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+    
+    // Products collection - read for all, write for admin only
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Orders collection - allow authenticated users to create orders
+    // and read their own orders, admin can read/write all orders
+    match /orders/{orderId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId || 
+                      isAdmin());
+      allow create: if request.auth != null || true; // Allow guest checkout
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+                           (request.auth.uid == userId || 
+                            isAdmin());
+    }
+    
+    // Categories collection - read for all
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Carts collection - users can only access their own cart
+    match /carts/{userId} {
+      allow read, write: if request.auth != null && 
+                           (request.auth.uid == userId || 
+                            isAdmin());
+    }
+    
+    // Wishlists collection - users can only access their own wishlist
+    match /wishlists/{userId} {
+      allow read, write: if request.auth != null && 
+                           (request.auth.uid == userId || 
+                            isAdmin());
+    }
+    
+    // Notifications collection - users can read their own, admin can create
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null &&
+                     (isAdmin() || request.auth.uid == resource.data.userId);
+      allow create: if isAdmin();  // This will now work!
+      allow update, delete: if false;
+    }
+  }
+}
+
+# INSTRUCTIONS:
+# 1. Go to Firebase Console → Firestore Database → Rules
+# 2. Replace existing rules with these rules
+# 3. Click "Publish"
+# 4. Test immediately - no sign out/in needed!
+#
+# Your logs already show: "User role from Firestore: UserRole.admin"
+# So this will work immediately without any backend script!
