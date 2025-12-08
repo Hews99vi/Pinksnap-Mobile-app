@@ -494,15 +494,18 @@ class _OrderStatusUpdateScreenState extends State<OrderStatusUpdateScreen> {
         Get.back();
       }
       
-      // Show success and go back
+      // Show success
       Get.snackbar(
         'Success',
         'Order updated successfully',
         backgroundColor: Colors.green,
         colorText: Colors.white,
+        duration: const Duration(seconds: 2),
       );
       
-      Get.back(); // Go back to order details
+      // Go back to order list screen (pop both this screen and the details screen)
+      Get.back(); // Pop order status update screen
+      Get.back(); // Pop order details screen
     } catch (e) {
       // Close loading dialog
       if (Get.isDialogOpen == true) {

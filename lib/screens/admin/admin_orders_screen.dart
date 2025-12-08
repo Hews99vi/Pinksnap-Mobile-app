@@ -23,7 +23,7 @@ class AdminOrdersScreen extends StatefulWidget {
 }
 
 class _AdminOrdersScreenState extends State<AdminOrdersScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final OrderController _orderController = Get.put(OrderController());
 
@@ -35,11 +35,22 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: OrderStatus.values.length + 1, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh orders when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _orderController.loadOrders();
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -283,8 +294,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     );
   }
 
-  void _showOrderDetails(Order order) {
-    Get.to(() => OrderDetailsScreen(order: order));
+  void _showOrderDetails(Order order) async {
+    await Get.to(() => OrderDetailsScreen(order: order));
+    // Refresh orders when returning from order details
+    _orderController.loadOrders();
   }
 }
 
@@ -307,7 +320,9 @@ class OrderDetailsScreen extends StatelessWidget {
             onSelected: (value) async {
               switch (value) {
                 case 'edit_status':
-                  Get.to(() => OrderStatusUpdateScreen(order: order));
+                  await Get.to(() => OrderStatusUpdateScreen(order: order));
+                  // Refresh orders when coming back from status update
+                  orderController.loadOrders();
                   break;
                 case 'edit_payment':
                   _showPaymentStatusDialog(context, orderController);
