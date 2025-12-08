@@ -22,6 +22,9 @@ class ProductController extends GetxController {
   List<String> get wishlistIds => _wishlistIds;
   List<String> get categories => _categories;
   bool get isLoading => _isLoading.value;
+  
+  /// Reactive products list for listeners (SearchController etc.)
+  RxList<Product> get productsRx => _products;
 
   List<Product> get wishlistProducts {
     final products = _products

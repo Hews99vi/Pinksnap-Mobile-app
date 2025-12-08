@@ -18,28 +18,45 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json, {String? id}) {
+    final docId = id ?? json['id'] as String? ?? '';
+    
+    // Fallback chain for key: key → categoryKey → name → docId
+    final rawKey = (json['key'] ??
+        json['categoryKey'] ??
+        json['name'] ??
+        docId)
+        .toString()
+        .trim();
+    
+    // Fallback for isVisible field
+    final visible = json['isVisible'] as bool? ??
+        json['isShopByCategoryVisible'] as bool? ??
+        true;
+    
     return Category(
-      id: id ?? json['id'] as String? ?? '',
+      id: docId,
       name: json['name'] as String? ?? '',
-      key: json['key'] as String? ?? '',
+      key: _normalizeKey(rawKey),
       icon: json['icon'] as String?,
       imageUrl: json['imageUrl'] as String?,
-      isVisible: json['isVisible'] as bool? ?? true,
+      isVisible: visible,
       sortOrder: json['sortOrder'] as int? ?? 0,
     );
+  }
+  
+  // Normalize key to UPPER_SNAKE_CASE format
+  static String _normalizeKey(String k) {
+    if (k.isEmpty) return '';
+    return k
+        .toUpperCase()
+        .replaceAll(' ', '_')
+        .replaceAll('-', '_')
+        .replaceAll(RegExp(r'_+'), '_');
   }
 
   // Factory constructor specifically for Firestore documents
   factory Category.fromDoc(String docId, Map<String, dynamic> data) {
-    return Category(
-      id: docId,
-      name: data['name'] as String? ?? '',
-      key: data['key'] as String? ?? '',
-      icon: data['icon'] as String?,
-      imageUrl: data['imageUrl'] as String?,
-      isVisible: data['isVisible'] as bool? ?? true,
-      sortOrder: data['sortOrder'] as int? ?? 0,
-    );
+    return Category.fromJson(data, id: docId);
   }
 
   Map<String, dynamic> toJson() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
@@ -6,11 +7,12 @@ import '../controllers/category_controller.dart';
 import '../utils/color_utils.dart';
 
 class SearchController extends GetxController {
-  ProductController? _productController;
-  ProductController get productController {
-    _productController ??= Get.find<ProductController>();
-    return _productController!;
-  }
+  // Controllers
+  late final ProductController _productController;
+  late final CategoryController _categoryController;
+  
+  // All products (base list)
+  final RxList<Product> _allProducts = <Product>[].obs;
   
   // Reactive variables
   final RxList<Product> _filteredProducts = <Product>[].obs;
@@ -20,9 +22,17 @@ class SearchController extends GetxController {
   final RxString _selectedColor = 'All'.obs;
   final Rx<RangeValues> _priceRange = const RangeValues(0, 1000).obs;
   final RxBool _showFilters = false.obs;
+  
+  // Stable price bounds from ALL products (not filtered)
+  double _stableMinPrice = 0;
+  double _stableMaxPrice = 1000;
+  
+  // Debounce timer to prevent filter spam
+  Timer? _filterTimer;
 
   // Getters
   List<Product> get filteredProducts => _filteredProducts;
+  List<Product> get allProducts => _allProducts;
   String get searchQuery => _searchQuery.value;
   String get selectedCategory => _selectedCategory.value;
   String get selectedSize => _selectedSize.value;
@@ -30,120 +40,198 @@ class SearchController extends GetxController {
   RangeValues get priceRange => _priceRange.value;
   bool get showFilters => _showFilters.value;
 
-  // Available filter options - simplified to avoid dependency issues
-  List<String> get availableCategories {
+  // Available filter options - from CategoryController with fallback to products
+  List<Map<String, String>> get availableCategories {
     try {
-      // Try to get from CategoryController first
-      if (Get.isRegistered<CategoryController>()) {
-        final catController = Get.find<CategoryController>();
-        return ['All', ...catController.categories.map((c) => c.name)];
+      final allCats = _categoryController.categories;
+      debugPrint('🔍 Building availableCategories from ${allCats.length} Firestore categories');
+      
+      // Get all visible categories (don't exclude empty keys yet)
+      final visibleCats = allCats
+          .where((c) => c.isVisible)
+          .toList()
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      
+      debugPrint('✅ Found ${visibleCats.length} visible categories');
+      
+      // Map categories - derive key from name if Firestore key is empty
+      final mappedCats = visibleCats.map((c) {
+        final rawKey = c.key.trim();
+        final safeKey = rawKey.isNotEmpty
+            ? Product.normalizeCategoryKey(rawKey)
+            : Product.normalizeCategoryKey(c.name);
+        
+        if (rawKey.isEmpty) {
+          debugPrint('⚠️ Category "${c.name}" has empty key, derived: $safeKey');
+        }
+        
+        return {'key': safeKey, 'name': c.name};
+      }).toList();
+      
+      // If no categories from Firestore, fallback to product keys
+      if (mappedCats.isEmpty && _allProducts.isNotEmpty) {
+        debugPrint('⚠️ No valid Firestore categories, falling back to product keys');
+        final productKeys = _allProducts
+            .map((p) => p.categoryKey)
+            .where((k) => k.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+        
+        return [
+          {'key': 'All', 'name': 'All'},
+          ...productKeys.map((k) => {'key': k, 'name': k})
+        ];
       }
+      
+      return [
+        {'key': 'All', 'name': 'All'},
+        ...mappedCats
+      ];
     } catch (e) {
-      // Fallback silently
-    }
-    
-    // Fallback to product controller categories or default categories
-    try {
-      return ['All', ...productController.categories];
-    } catch (e) {
-      // Final fallback to hardcoded categories
-      return ['All', 'Dresses', 'Tops', 'Pants', 'Skirts', 'Accessories', 'Shoes', 'Bags', 'Jewelry'];
+      debugPrint('❌ Error getting categories: $e');
+      return [{'key': 'All', 'name': 'All'}];
     }
   }
   
   List<String> get availableSizes => ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
   
   List<String> get availableColors {
-    try {
-      // Get all colors from ColorUtils that are used in products
-      Set<String> productColors = {};
-      for (var product in productController.products) {
-        productColors.addAll(product.colors);
-      }
-      
-      // If we have specific colors in products, show only those
-      if (productColors.isNotEmpty) {
-        return ['All', ...productColors.toList()..sort()];
-      }
-    } catch (e) {
-      // Fallback silently if products can't be accessed
+    if (_allProducts.isEmpty) return ['All', ...ColorUtils.availableColors];
+    
+    final productColors = <String>{};
+    for (var product in _allProducts) {
+      productColors.addAll(product.colors);
     }
     
-    // Otherwise show all available colors from ColorUtils
-    return ['All', ...ColorUtils.availableColors];
+    return productColors.isEmpty 
+        ? ['All', ...ColorUtils.availableColors]
+        : ['All', ...productColors.toList()..sort()];
   }
 
   @override
   void onInit() {
     super.onInit();
     
-    // Load categories and initialize filters
-    _loadCategories();
-    _initializeFilters();
+    // Get controller references
+    _productController = Get.find<ProductController>();
+    _categoryController = Get.find<CategoryController>();
     
-    try {
-      _filteredProducts.assignAll(productController.products);
-    } catch (e) {
-      // If ProductController is not available, initialize with empty list
-      _filteredProducts.assignAll([]);
-    }
+    // Initialize async
+    _initializeController();
   }
 
-  // Load categories to ensure they're available
-  Future<void> _loadCategories() async {
-    try {
-      // Try to load categories from product controller
-      await productController.loadCategories();
+  // Initialize controller data asynchronously
+  Future<void> _initializeController() async {
+    // Ensure categories are loaded
+    if (_categoryController.categories.isEmpty) {
+      debugPrint('📋 Categories not loaded, loading now...');
+      await _categoryController.loadCategories();
+    } else {
+      debugPrint('📋 Categories already loaded: ${_categoryController.categories.length}');
+    }
+    
+    // Initialize products list (fast initial state)
+    _allProducts.assignAll(_productController.products);
+    _filteredProducts.assignAll(_allProducts);
+    
+    // Set stable price bounds when products change (once)
+    if (_allProducts.isNotEmpty) {
+      _stableMinPrice = _allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b).floorToDouble();
+      _stableMaxPrice = _allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b).ceilToDouble();
       
-      // Also try category controller if available
-      if (Get.isRegistered<CategoryController>()) {
-        final catController = Get.find<CategoryController>();
-        await catController.loadCategories();
+      _priceRange.value = RangeValues(_stableMinPrice, _stableMaxPrice);
+      
+      debugPrint('💰 Stable price bounds: \$${_stableMinPrice} - \$${_stableMaxPrice}');
+      
+      final uniqueKeys = _allProducts.map((p) => p.categoryKey).toSet().toList()..sort();
+      debugPrint('🔑 Normalized category keys (${uniqueKeys.length}): $uniqueKeys');
+    }
+    
+    // ✅ KEEP SearchController products in sync with ProductController
+    ever<List<Product>>(_productController.productsRx, (list) {
+      debugPrint('🔄 Products updated in SearchController: ${list.length}');
+      
+      _allProducts.assignAll(list);
+      _filteredProducts.assignAll(list);
+
+      // Recompute stable price bounds whenever products load
+      if (_allProducts.isNotEmpty) {
+        _stableMinPrice = _allProducts
+            .map((p) => p.price)
+            .reduce((a, b) => a < b ? a : b)
+            .floorToDouble();
+
+        _stableMaxPrice = _allProducts
+            .map((p) => p.price)
+            .reduce((a, b) => a > b ? a : b)
+            .ceilToDouble();
+
+        _priceRange.value = RangeValues(_stableMinPrice, _stableMaxPrice);
+
+        final uniqueKeys = _allProducts
+            .map((p) => p.categoryKey)
+            .toSet()
+            .toList()
+          ..sort();
+
+        debugPrint('📋 Available keys: $uniqueKeys');
       }
-    } catch (e) {
-      print('Error loading categories: $e');
-    }
+
+      // ✅ Re-apply filters after sync
+      _scheduleFilter();
+    });
+    
+    // React to filter changes with debouncing to prevent spam
+    everAll([
+      _searchQuery,
+      _selectedCategory,
+      _selectedSize,
+      _selectedColor,
+      _priceRange,
+    ], (_) {
+      _scheduleFilter();
+    });
+  }
+  
+  // Debounced filter execution to prevent spam
+  void _scheduleFilter() {
+    _filterTimer?.cancel();
+    _filterTimer = Timer(const Duration(milliseconds: 80), _applyFilters);
   }
 
-  // Public method to refresh categories
-  Future<void> refreshCategories() async {
-    await _loadCategories();
-  }
-
-  void _initializeFilters() {
-    if (productController.products.isNotEmpty) {
-      final prices = productController.products.map((p) => p.price).toList();
-      prices.sort();
-      _priceRange.value = RangeValues(
-        prices.first.floorToDouble(),
-        prices.last.ceilToDouble(),
-      );
-    }
+  // Public method to refresh data
+  Future<void> refreshData() async {
+    await _categoryController.loadCategories();
+    _allProducts.assignAll(_productController.products);
   }
 
   void updateSearchQuery(String query) {
     _searchQuery.value = query;
-    _applyFilters();
+    // everAll will trigger _applyFilters automatically
   }
 
-  void updateCategory(String category) {
-    _selectedCategory.value = category;
-    _applyFilters();
+  void updateCategory(String categoryKey) {
+    // ✅ PREVENT EMPTY KEYS
+    final safeKey = (categoryKey.isEmpty || categoryKey.trim().isEmpty) ? 'All' : categoryKey;
+    _selectedCategory.value = safeKey;
+    debugPrint('🔍 Selected category key: "$safeKey"');
+    // everAll will trigger _scheduleFilter automatically
   }
 
   void updateSize(String size) {
     _selectedSize.value = size;
-    _applyFilters();
+    // everAll will trigger _applyFilters automatically
   }
   
   void updateColor(String color) {
     _selectedColor.value = color;
-    _applyFilters();
+    // everAll will trigger _applyFilters automatically
   }
 
   void updatePriceRange(RangeValues range) {
     _priceRange.value = range;
-    _applyFilters();
+    // everAll will trigger _applyFilters automatically
   }
 
   void toggleFilters() {
@@ -155,64 +243,61 @@ class SearchController extends GetxController {
     _selectedCategory.value = 'All';
     _selectedSize.value = 'All';
     _selectedColor.value = 'All';
-    _initializeFilters();
-    _applyFilters();
+    _priceRange.value = RangeValues(_stableMinPrice, _stableMaxPrice);
+    // everAll will trigger _applyFilters automatically
   }
 
   void _applyFilters() {
-    try {
-      final filtered = productController.products.where((product) {
-        // Text search - still include category text for user-friendly search
-        final searchText = _searchQuery.value.toLowerCase();
-        final matchesSearch = searchText.isEmpty ||
-            product.name.toLowerCase().contains(searchText) ||
-            product.description.toLowerCase().contains(searchText) ||
-            product.category.toLowerCase().contains(searchText);
+    final searchText = _searchQuery.value.toLowerCase();
+    final cat = _selectedCategory.value;
+    final size = _selectedSize.value;
+    final color = _selectedColor.value;
+    final range = _priceRange.value;
 
-        // Category filter - STRICT: use categoryKey for logic
-        bool matchesCategory;
-        if (_selectedCategory.value == 'All') {
-          matchesCategory = true;
-        } else {
-          final categoryKey = _selectedCategory.value
-              .trim()
-              .toUpperCase()
-              .replaceAll(RegExp(r'\s+'), '_');
-          matchesCategory = 
-              product.categoryKey.trim().toUpperCase() == categoryKey;
-        }
+    final filtered = _allProducts.where((product) {
+      // Text search
+      final matchesSearch = searchText.isEmpty ||
+          product.name.toLowerCase().contains(searchText) ||
+          product.description.toLowerCase().contains(searchText) ||
+          product.category.toLowerCase().contains(searchText);
 
-        // Size filter
-        final matchesSize = _selectedSize.value == 'All' ||
-            product.sizes.contains(_selectedSize.value);
-            
-        // Color filter
-        final matchesColor = _selectedColor.value == 'All' ||
-            product.colors.contains(_selectedColor.value);
+      // Category filter - normalize both sides for reliable matching
+      final normalizedSelected = (cat == 'All') 
+          ? 'All' 
+          : Product.normalizeCategoryKey(cat);
+      
+      final matchesCategory = (normalizedSelected == 'All') ||
+          (product.categoryKey.trim().toUpperCase() == normalizedSelected);
 
-        // Price filter
-        final matchesPrice = product.price >= _priceRange.value.start &&
-            product.price <= _priceRange.value.end;
+      // Size filter
+      final matchesSize = (size == 'All') || product.sizes.contains(size);
+          
+      // Color filter
+      final matchesColor = (color == 'All') || product.colors.contains(color);
 
-        return matchesSearch && matchesCategory && matchesSize && matchesColor && matchesPrice;
-      }).toList();
+      // Price filter
+      final matchesPrice = product.price >= range.start && product.price <= range.end;
 
-      _filteredProducts.assignAll(filtered);
-    } catch (e) {
-      // If ProductController is not available, clear filtered products
-      _filteredProducts.clear();
+      return matchesSearch && matchesCategory && matchesSize && matchesColor && matchesPrice;
+    }).toList();
+
+    _filteredProducts.assignAll(filtered);
+    
+    // Debug logging only for category filter issues
+    if (cat != 'All' && filtered.isEmpty) {
+      debugPrint('⚠️ No products for category "$cat"');
+      final uniqueKeys = _allProducts.map((p) => p.categoryKey).toSet().toList()..sort();
+      debugPrint('📋 Available keys: $uniqueKeys');
     }
   }
 
-  double get maxPrice {
-    try {
-      if (productController.products.isEmpty) return 1000;
-      return productController.products
-          .map((p) => p.price)
-          .reduce((a, b) => a > b ? a : b)
-          .ceilToDouble();
-    } catch (e) {
-      return 1000;
-    }
+  // ✅ STABLE bounds from ALL products, not filtered
+  double get minPrice => _stableMinPrice;
+  double get maxPrice => _stableMaxPrice;
+  
+  @override
+  void onClose() {
+    _filterTimer?.cancel();
+    super.onClose();
   }
 }

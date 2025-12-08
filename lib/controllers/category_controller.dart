@@ -33,10 +33,18 @@ class CategoryController extends GetxController {
     try {
       _isLoading.value = true;
       List<models.Category> loadedCategories = await FirebaseDbService.getCategories();
+      
+      debugPrint('🔥 RAW categories count = ${loadedCategories.length}');
+      for (final c in loadedCategories) {
+        debugPrint('🔥 cat name="${c.name}" key="${c.key}" visible=${c.isVisible} sortOrder=${c.sortOrder} id="${c.id}"');
+      }
+      
       _categories.assignAll(loadedCategories);
-      debugPrint('Loaded ${loadedCategories.length} categories');
+      
+      final visibleCount = _categories.where((c) => c.isVisible).length;
+      debugPrint('✅ Loaded ${loadedCategories.length} categories (${visibleCount} visible)');
     } catch (e) {
-      debugPrint('Error loading categories: $e');
+      debugPrint('❌ Error loading categories: $e');
       Get.snackbar('Error', 'Failed to load categories');
     } finally {
       _isLoading.value = false;
@@ -138,15 +146,19 @@ class CategoryController extends GetxController {
     try {
       _isLoading.value = true;
       
+      debugPrint('🔄 Toggling visibility for ${category.name} (id: ${category.id}, key: ${category.key}) to $isVisible');
       await FirebaseDbService.updateCategoryVisibility(category, isVisible);
       
-      // Update local list
-      int index = _categories.indexWhere((c) => c.name == category.name);
+      // Update local list by id (not name)
+      int index = _categories.indexWhere((c) => c.id == category.id);
       if (index != -1) {
         _categories[index] = category.copyWith(isVisible: isVisible);
+        debugPrint('✅ Updated local category list at index $index');
+      } else {
+        debugPrint('⚠️ Category not found in local list: ${category.id}');
       }
       
-      debugPrint('Toggled visibility for ${category.name}: $isVisible');
+      debugPrint('✅ Toggled visibility for ${category.name}: $isVisible');
       Get.snackbar(
         'Success', 
         'Category ${isVisible ? "shown" : "hidden"} successfully',

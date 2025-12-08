@@ -375,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Obx(() => Text(
+                      Text(
                         _selectedCategoryIndex == 0
                             ? 'All Products'
                             : visibleCategoryNames[_selectedCategoryIndex],
@@ -385,11 +385,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.black87,
                           letterSpacing: -0.5,
                         ),
-                      )),
+                      ),
                     ],
                   ),
                   Obx(() => Text(
-                    '${filteredProducts.length} items',
+                    '${productController.products.length} items',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],

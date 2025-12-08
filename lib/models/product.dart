@@ -1,6 +1,48 @@
 import 'package:flutter/foundation.dart';
 
 class Product {
+  /// Normalize category key to ML format: "strapless frocks" -> "STRAPLESS_FROCK"
+  static String _normalizeCategoryKey(String raw) {
+    if (raw.isEmpty) return '';
+    
+    // Uppercase and replace spaces/hyphens with underscore
+    String normalized = raw.trim().toUpperCase().replaceAll(RegExp(r'[\s\-]+'), '_');
+    
+    // Collapse multiple underscores
+    normalized = normalized.replaceAll(RegExp(r'_+'), '_');
+    
+    // Alias map for plural/variant forms
+    const aliasMap = {
+      'STRAPLESS_FROCKS': 'STRAPLESS_FROCK',
+      'STRAP_DRESSES': 'STRAP_DRESS',
+      'LONG_SLEEVE_FROCKS': 'LONG_SLEEVE_FROCK',
+      'HOODIES': 'HOODIE',
+      'T_SHIRTS': 'T_SHIRT',
+      'HATS': 'HAT',
+      'SHIRTS': 'SHIRT',
+      'SHORTS': 'SHORT',
+      'SHOES': 'SHOE',
+      'PANTS': 'PANT',
+      'TOPS': 'TOP',
+      'BAGS': 'BAG',
+      'SKIRTS': 'SKIRT',
+      'FROCKS': 'STRAPLESS_FROCK',
+      'DRESSES': 'DRESS',
+      'COATS': 'COAT',
+      'JACKETS': 'JACKET',
+      'JEANS': 'JEAN',
+      'TROUSERS': 'TROUSER',
+      'SWEATERS': 'SWEATER',
+      'T__SHIRT': 'T_SHIRT',
+      'T_SHIRT': 'T_SHIRT',
+    };
+    
+    return aliasMap[normalized] ?? normalized;
+  }
+  
+  /// Public helper so controllers can normalize category keys consistently.
+  static String normalizeCategoryKey(String raw) => _normalizeCategoryKey(raw);
+  
   final String id;
   final String name;
   final String description;
@@ -38,9 +80,9 @@ class Product {
     final rawCategoryKey = (json['categoryKey'] ?? json['category'] ?? '')
         .toString()
         .trim();
-
-    // TEMP DEBUG LOG
-    debugPrint("LOADED PRODUCT '${json['name']}' categoryKey='${json['categoryKey']}' category='${json['category']}'");
+    
+    // ✅ NORMALIZE on read - single source of truth
+    final normalizedKey = _normalizeCategoryKey(rawCategoryKey);
 
     return Product(
       id: json['id'] as String,
@@ -51,7 +93,7 @@ class Product {
 
       // Backward compatible:
       category: (json['category'] ?? '').toString(),
-      categoryKey: rawCategoryKey, // ✅ NEW, fallback safe
+      categoryKey: normalizedKey, // ✅ NORMALIZED
 
       sizes: List<String>.from(json['sizes'] as List),
       colors: json['colors'] != null

@@ -130,7 +130,7 @@ class FirebaseDbService {
     }
   }
 
-  // Add a new category
+  // Add a new category (or upsert with merge to fix missing fields)
   static Future<void> addCategory(models.Category category) async {
     try {
       // Use category.id if provided, otherwise use key, otherwise generate from name
@@ -140,15 +140,16 @@ class FirebaseDbService {
               ? category.key 
               : category.name.toLowerCase().replaceAll(' ', '_'));
       
+      // Use merge: true to upsert (update existing or create new)
       await _firestore
           .collection(_categoriesCollection)
           .doc(docId)
           .set({
         ...category.toJson(),
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
       
-      debugPrint('✅ Added category: ${category.name} (id: $docId) with visibility: ${category.isVisible}');
+      debugPrint('✅ Upserted category: ${category.name} (id: $docId) with key: ${category.key}, visibility: ${category.isVisible}');
     } catch (e) {
       debugPrint('❌ Error adding category: $e');
       throw Exception('Failed to add category: $e');

@@ -186,39 +186,53 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Obx(() => Wrap(
+                      Obx(() {
+                        final categories = searchController.availableCategories;
+                        
+                        // Show category count for debugging
+                        debugPrint('🎨 Rendering ${categories.length} category chips');
+                        
+                        return Wrap(
                         spacing: 8,
                         runSpacing: 6,
-                        children: searchController.availableCategories
-                            .map((category) => InkWell(
-                                  onTap: () {
-                                    searchController.updateCategory(category);
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                                    child: Chip(
-                                      label: Text(category),
-                                      labelStyle: TextStyle(
-                                        color: searchController.selectedCategory == category
-                                            ? Colors.white
-                                            : Colors.grey[700],
-                                        fontSize: 12,
-                                      ),
-                                      backgroundColor: searchController.selectedCategory == category
-                                          ? Colors.pink[400]
-                                          : Colors.grey[200],
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        children: categories
+                            .map((category) {
+                              // availableCategories always returns Map<String, String>
+                              final key = category['key']!;
+                              final name = category['name']!;
+                              
+                              return InkWell(
+                                onTap: () {
+                                  // Pass key only (String)
+                                  searchController.updateCategory(key);
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                  child: Chip(
+                                    label: Text(name),
+                                    labelStyle: TextStyle(
+                                      color: searchController.selectedCategory == key
+                                          ? Colors.white
+                                          : Colors.grey[700],
+                                      fontSize: 12,
                                     ),
+                                    backgroundColor: searchController.selectedCategory == key
+                                        ? Colors.pink[400]
+                                        : Colors.grey[200],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                   ),
-                                ))
+                                ),
+                              );
+                            })
                             .toList(),
-                      )),
+                        );
+                      }),
                       
                       const SizedBox(height: 20),
                       
@@ -361,40 +375,59 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Obx(() => Column(
-                        children: [
-                          RangeSlider(
-                            values: searchController.priceRange,
-                            min: 0,
-                            max: searchController.maxPrice,
-                            divisions: 20,
-                            activeColor: Colors.pink[600],
-                            inactiveColor: Colors.pink[100],
-                            onChanged: (values) {
-                              searchController.updatePriceRange(values);
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '\$${searchController.priceRange.start.toInt()}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
+                      Obx(() {
+                        final min = searchController.minPrice;
+                        final max = searchController.maxPrice;
+                        final hasProducts = searchController.filteredProducts.isNotEmpty;
+                        
+                        if (!hasProducts || max <= min) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Text(
+                              'No products available',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
                               ),
-                              Text(
-                                '\$${searchController.priceRange.end.toInt()}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                            ),
+                          );
+                        }
+                        
+                        return Column(
+                          children: [
+                            RangeSlider(
+                              values: searchController.priceRange,
+                              min: min,
+                              max: max,
+                              divisions: 20,
+                              activeColor: Colors.pink[600],
+                              inactiveColor: Colors.pink[100],
+                              onChanged: (values) {
+                                searchController.updatePriceRange(values);
+                              },
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '\$${searchController.priceRange.start.toInt()}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      )),
+                                Text(
+                                  '\$${searchController.priceRange.end.toInt()}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      }),
                     ],
                   ),
                 ),

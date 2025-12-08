@@ -20,31 +20,26 @@ class CategorySeeder {
 
   static Future<void> seedDefaultCategories() async {
     try {
-      debugPrint('Seeding default categories...');
+      debugPrint('🌱 Seeding/updating default categories with UPSERT...');
       
-      // Get existing categories
-      List<models.Category> existingCategories = await FirebaseDbService.getCategories();
-      
-      // Add categories that don't exist
+      // Upsert all categories with merge to fix missing fields
       for (var categoryData in _defaultCategories) {
-        if (!existingCategories.any((c) => c.name == categoryData['name'])) {
-          final category = models.Category(
-            id: categoryData['key'],  // Use key as document ID
-            name: categoryData['name'],
-            key: categoryData['key'],
-            isVisible: true,
-            sortOrder: _defaultCategories.indexOf(categoryData),
-          );
-          await FirebaseDbService.addCategory(category);
-          debugPrint('Added category: ${category.name} (id: ${category.id}, visible: ${category.isVisible}, sortOrder: ${category.sortOrder})');
-        } else {
-          debugPrint('Category already exists: ${categoryData['name']}');
-        }
+        final category = models.Category(
+          id: categoryData['key'],  // Use key as document ID
+          name: categoryData['name'],
+          key: categoryData['key'],
+          isVisible: true,
+          sortOrder: _defaultCategories.indexOf(categoryData),
+        );
+        
+        // Use addCategory which will set the document
+        await FirebaseDbService.addCategory(category);
+        debugPrint('✅ Upserted: ${category.name} (id: ${category.id}, key: ${category.key}, visible: ${category.isVisible}, sortOrder: ${category.sortOrder})');
       }
       
-      debugPrint('Category seeding completed!');
+      debugPrint('✅ Category seeding completed! All categories now have key and sortOrder fields.');
     } catch (e) {
-      debugPrint('Error seeding categories: $e');
+      debugPrint('❌ Error seeding categories: $e');
     }
   }
 
