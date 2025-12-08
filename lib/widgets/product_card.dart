@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import '../models/product.dart';
@@ -54,26 +55,69 @@ class ProductCard extends StatelessWidget {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl: product.images.isNotEmpty ? product.images[0] : '',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[100],
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                      child: kIsWeb
+                        ? Image.network(
+                            product.images.isNotEmpty ? product.images[0] : '',
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey[100],
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('❌ Image load error for ${product.name}: $error');
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.grey[400],
+                                      size: 40,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Image unavailable',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: product.images.isNotEmpty ? product.images[0] : '',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[100],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                             ),
+                            errorWidget: (context, url, error) {
+                              debugPrint('❌ Image load error for ${product.name}: $error');
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.grey[400],
+                                  size: 40,
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[100],
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey[400],
-                            size: 40,
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                   // Wishlist Button
