@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/firebase_db_service.dart';
 import '../utils/category_seeder.dart';
 import '../models/category.dart' as models;
+import '../models/product.dart';
 
 class CategoryController extends GetxController {
   static CategoryController get instance => Get.find();
@@ -11,6 +12,7 @@ class CategoryController extends GetxController {
   final RxBool _isLoading = false.obs;
   
   List<models.Category> get categories => _categories;
+  RxList<models.Category> get categoriesRx => _categories; // ✅ Expose reactive list
   bool get isLoading => _isLoading.value;
   
   // Get only visible categories for Shop by Category section
@@ -42,7 +44,7 @@ class CategoryController extends GetxController {
       _categories.assignAll(loadedCategories);
       
       final visibleCount = _categories.where((c) => c.isVisible).length;
-      debugPrint('✅ Loaded ${loadedCategories.length} categories (${visibleCount} visible)');
+      debugPrint('✅ Loaded ${loadedCategories.length} categories ($visibleCount visible)');
     } catch (e) {
       debugPrint('❌ Error loading categories: $e');
       Get.snackbar('Error', 'Failed to load categories');
@@ -212,4 +214,14 @@ class CategoryController extends GetxController {
   
   // Get category count
   int get categoryCount => _categories.length;
+  
+  // Helper: Normalize a category key using Product's normalization logic
+  String normalizeKey(String raw) => Product.normalizeCategoryKey(raw);
+  
+  // Helper: Get category name for a given normalized key
+  String? nameForKey(String key) {
+    return _categories.firstWhereOrNull(
+      (c) => normalizeKey(c.key.isNotEmpty ? c.key : c.name) == key
+    )?.name;
+  }
 }

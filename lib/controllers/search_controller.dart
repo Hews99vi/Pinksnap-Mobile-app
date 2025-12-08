@@ -140,9 +140,10 @@ class SearchController extends GetxController {
       _stableMinPrice = _allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b).floorToDouble();
       _stableMaxPrice = _allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b).ceilToDouble();
       
+      // Initialize priceRange with stable bounds
       _priceRange.value = RangeValues(_stableMinPrice, _stableMaxPrice);
       
-      debugPrint('💰 Stable price bounds: \$${_stableMinPrice} - \$${_stableMaxPrice}');
+      debugPrint('💰 Stable price bounds: \$$_stableMinPrice - \$$_stableMaxPrice');
       
       final uniqueKeys = _allProducts.map((p) => p.categoryKey).toSet().toList()..sort();
       debugPrint('🔑 Normalized category keys (${uniqueKeys.length}): $uniqueKeys');
@@ -230,7 +231,16 @@ class SearchController extends GetxController {
   }
 
   void updatePriceRange(RangeValues range) {
-    _priceRange.value = range;
+    final min = _stableMinPrice;
+    final max = _stableMaxPrice;
+
+    final clampedStart = range.start.clamp(min, max);
+    final clampedEnd = range.end.clamp(min, max);
+
+    _priceRange.value = RangeValues(
+      clampedStart <= clampedEnd ? clampedStart : clampedEnd,
+      clampedEnd >= clampedStart ? clampedEnd : clampedStart,
+    );
     // everAll will trigger _applyFilters automatically
   }
 

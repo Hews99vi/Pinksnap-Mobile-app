@@ -378,9 +378,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       Obx(() {
                         final min = searchController.minPrice;
                         final max = searchController.maxPrice;
-                        final hasProducts = searchController.filteredProducts.isNotEmpty;
+                        final hasAnyProducts = searchController.allProducts.isNotEmpty;
                         
-                        if (!hasProducts || max <= min) {
+                        if (!hasAnyProducts || max <= min) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Text(
