@@ -19,6 +19,8 @@ class ImageSearchController extends GetxController {
   var searchHistory = <File>[].obs;
   var predictions = <Map<String, dynamic>>[].obs;
   var showPredictions = false.obs;
+  var predictedCategoryName = Rx<String?>(null); // Human-readable category name for UI
+  var isMixedCategoryResults = false.obs; // True when showing fallback/mixed results
   
   // Mock data for demonstration - replace with actual ML model results
   var mockSearchResults = <Product>[].obs;
@@ -28,6 +30,34 @@ class ImageSearchController extends GetxController {
     super.onInit();
     _loadSearchHistory();
     _initializeModel();
+  }
+
+  /// Convert category key to human-readable display name
+  String _getCategoryDisplayName(String categoryKey) {
+    // Map ML keys back to friendly names
+    const keyToDisplay = {
+      'STRAPLESS_FROCK': 'Strapless Dresses',
+      'STRAP_DRESS': 'Strap Dresses',
+      'LONG_SLEEVE_FROCK': 'Long Sleeve Dresses',
+      'HOODIE': 'Hoodies',
+      'T_SHIRT': 'T-Shirts',
+      'HAT': 'Hats',
+      'SHIRT': 'Shirts',
+      'SHORTS': 'Shorts',
+      'SHOES': 'Shoes',
+      'PANTS': 'Pants',
+      'TOP': 'Tops',
+      'BAG': 'Bags',
+      'SKIRT': 'Skirts',
+      'DRESS': 'Dresses',
+      'COAT': 'Coats',
+      'JACKET': 'Jackets',
+      'JEAN': 'Jeans',
+      'TROUSER': 'Trousers',
+      'SWEATER': 'Sweaters',
+    };
+    
+    return keyToDisplay[categoryKey] ?? categoryKey.replaceAll('_', ' ').toLowerCase().split(' ').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
   }
 
   @override
@@ -192,11 +222,23 @@ class ImageSearchController extends GetxController {
       final results = await _imageSearchService.searchSimilarProducts(imageFile);
       debugPrint('🔥 Results count: ${results.length}');
       
-      // Update predictions from the service
+      // Update predictions and category name from the service
       if (_imageSearchService.lastPredictions != null) {
         predictions.value = _imageSearchService.lastPredictions!;
         showPredictions.value = true;
       }
+      
+      // Store predicted category for UI display
+      if (_imageSearchService.lastPredictedCategoryKey != null) {
+        final categoryKey = _imageSearchService.lastPredictedCategoryKey!;
+        predictedCategoryName.value = _getCategoryDisplayName(categoryKey);
+        debugPrint('🏷️ Predicted category display: ${predictedCategoryName.value}');
+      } else {
+        predictedCategoryName.value = null;
+      }
+      
+      // Track if results are from mixed categories
+      isMixedCategoryResults.value = _imageSearchService.isMixedCategoryResults;
       
       searchResults.value = results;
       
@@ -257,6 +299,8 @@ class ImageSearchController extends GetxController {
     selectedImage.value = null;
     predictions.clear();
     showPredictions.value = false;
+    predictedCategoryName.value = null;
+    isMixedCategoryResults.value = false;
   }
 
   void clearSearchHistory() {

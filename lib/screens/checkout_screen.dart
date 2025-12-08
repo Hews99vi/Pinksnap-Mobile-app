@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../controllers/cart_controller.dart';
 import '../controllers/order_controller.dart';
 import '../controllers/auth_controller.dart';
@@ -1139,6 +1138,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _createOrderAfterPayment(CartController cartController) async {
+    // Check if widget is still mounted
+    if (!mounted) return;
+    
     setState(() {
       _isProcessingOrder = true;
     });
@@ -1168,9 +1170,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       cartController.clearCart();
 
       Logger.debug('Order created successfully: $orderId');
+      
+      // Check if widget is still mounted before showing dialog
+      if (!mounted) return;
+      
+      // Close the payment screen first
+      Get.back();
+      
+      // Then show success dialog
       _showOrderSuccessDialog(orderId);
     } catch (e) {
       Logger.error('Error creating order: $e', error: e);
+      
+      // Check if widget is still mounted before showing snackbar
+      if (!mounted) return;
+      
       Get.snackbar(
         'Error',
         'Failed to place order: $e',
@@ -1178,9 +1192,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         colorText: Colors.white,
       );
     } finally {
-      setState(() {
-        _isProcessingOrder = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessingOrder = false;
+        });
+      }
     }
   }
 
@@ -1229,50 +1245,54 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 64,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Order Placed Successfully!',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 64,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Order ID: #${orderId.substring(0, 8).toUpperCase()}',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
+              const SizedBox(height: 16),
+              const Text(
+                'Order Placed Successfully!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Thank you for your purchase. You will receive a confirmation email shortly.',
-              textAlign: TextAlign.center,
+              const SizedBox(height: 8),
+              Text(
+                'Order ID: #${orderId.substring(0, 8).toUpperCase()}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Thank you for your purchase. You will receive a confirmation email shortly.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Close all dialogs and navigate back to home
+                Navigator.of(context).pop(); // Close the dialog
+                // Navigate back to home screen, removing all intermediate screens
+                Get.until((route) => route.isFirst);
+              },
+              child: const Text('Continue Shopping'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back(); // Close dialog
-              Get.back(); // Go back to previous screen
-              Get.back(); // Go back to home
-            },
-            child: const Text('Continue Shopping'),
-          ),
-        ],
       ),
     );
   }

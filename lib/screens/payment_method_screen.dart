@@ -717,6 +717,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   }
 
   Future<void> _processPayment() async {
+    if (_isProcessing) return; // Prevent multiple simultaneous payment attempts
+    
     setState(() {
       _isProcessing = true;
     });
@@ -726,40 +728,48 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         // Process payment with Stripe
         bool success = await _processStripePayment();
         
-        if (success) {
+        if (success && mounted) {
           widget.onPaymentSuccess();
         }
       } else if (_selectedPaymentMethod == 'demo') {
         // Simulate demo payment process (fallback)
         await Future.delayed(const Duration(seconds: 2));
         
+        if (!mounted) return;
+        
         // Show demo payment dialog
         bool success = await _showDemoPaymentDialog();
         
-        if (success) {
+        if (success && mounted) {
           widget.onPaymentSuccess();
         }
       } else {
         // Handle other payment methods (Apple Pay, Google Pay, etc.)
-        Get.snackbar(
-          'Coming Soon',
-          'This payment method will be available soon',
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-        );
+        if (mounted) {
+          Get.snackbar(
+            'Coming Soon',
+            'This payment method will be available soon',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        }
       }
     } catch (e) {
       Logger.error('Payment processing error: $e', error: e);
-      Get.snackbar(
-        'Payment Error',
-        'Failed to process payment: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        Get.snackbar(
+          'Payment Error',
+          'Failed to process payment: $e',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -1011,7 +1021,11 @@ class _DemoPaymentProcessDialogState extends State<_DemoPaymentProcessDialog>
       actions: _paymentSuccess
           ? [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop(true);
+                  }
+                },
                 child: const Text(
                   'Continue',
                   style: TextStyle(

@@ -5,6 +5,7 @@ import '../models/cart_item.dart';
 import '../models/user.dart';
 import '../services/firebase_db_service.dart';
 import '../services/image_search_service.dart';
+import '../utils/product_validation_helper.dart';
 import 'auth_controller.dart';
 import 'category_controller.dart';
 
@@ -80,6 +81,9 @@ class ProductController extends GetxController {
       _products.assignAll(loadedProducts);
 
       _debugCategoryDistribution();
+      
+      // ✅ Validate products for categoryKey mismatches
+      ProductValidationHelper.validateProducts(_products);
 
       debugPrint('🔥 ProductController instance = $hashCode');
       debugPrint('🔥 Products loaded = ${_products.length}');

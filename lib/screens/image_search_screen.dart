@@ -340,21 +340,66 @@ class ImageSearchScreen extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.search, color: Colors.pink[600], size: 20),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Similar Products (${controller.searchResults.length})',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+              Row(
+                children: [
+                  Icon(Icons.search, color: Colors.pink[600], size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Obx(() {
+                      // Show category-specific label if predicted category is available
+                      final categoryName = controller.predictedCategoryName.value;
+                      final label = categoryName != null
+                          ? 'Similar $categoryName (${controller.searchResults.length})'
+                          : 'Similar Products (${controller.searchResults.length})';
+                      
+                      return Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
               ),
+              // Show mixed category indicator if applicable
+              Obx(() {
+                if (controller.isMixedCategoryResults.value) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 28),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange[300]!),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.info_outline, size: 14, color: Colors.orange[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Mixed categories',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
             ],
           ),
         ),

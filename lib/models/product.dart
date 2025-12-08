@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 class Product {
   /// Normalize category key to ML format: "strapless frocks" -> "STRAPLESS_FROCK"
@@ -11,7 +10,9 @@ class Product {
     // Collapse multiple underscores
     normalized = normalized.replaceAll(RegExp(r'_+'), '_');
     
-    // Alias map for plural/variant forms
+    // ✅ Alias map - maps variants to ACTUAL MODEL KEYS from labels.txt
+    // Model keys: HAT, HOODIE, PANTS, SHIRT, SHOES, SHORTS, TOP, T_SHIRT, 
+    //             LONG_SLEEVE_FROCK, STRAP_DRESS, STRAPLESS_FROCK
     const aliasMap = {
       'STRAPLESS_FROCKS': 'STRAPLESS_FROCK',
       'STRAP_DRESSES': 'STRAP_DRESS',
@@ -20,21 +21,21 @@ class Product {
       'T_SHIRTS': 'T_SHIRT',
       'HATS': 'HAT',
       'SHIRTS': 'SHIRT',
-      'SHORTS': 'SHORT',
-      'SHOES': 'SHOE',
-      'PANTS': 'PANT',
       'TOPS': 'TOP',
+      // ✅ Model uses PLURAL for these three:
+      'SHOE': 'SHOES',      // singular -> model key (SHOES)
+      'PANT': 'PANTS',      // singular -> model key (PANTS)
+      'SHORT': 'SHORTS',    // singular -> model key (SHORTS)
+      // Common variants:
       'BAGS': 'BAG',
       'SKIRTS': 'SKIRT',
-      'FROCKS': 'STRAPLESS_FROCK',
-      'DRESSES': 'DRESS',
+      // ✅ Keep FROCKS and DRESSES distinct - do NOT alias to specific types
       'COATS': 'COAT',
       'JACKETS': 'JACKET',
-      'JEANS': 'JEAN',
-      'TROUSERS': 'TROUSER',
+      'JEANS': 'PANTS',             // jeans -> PANTS
+      'TROUSERS': 'PANTS',          // trousers -> PANTS
       'SWEATERS': 'SWEATER',
-      'T__SHIRT': 'T_SHIRT',
-      'T_SHIRT': 'T_SHIRT',
+      'T__SHIRT': 'T_SHIRT',        // double underscore cleanup
     };
     
     return aliasMap[normalized] ?? normalized;
