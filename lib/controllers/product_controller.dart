@@ -294,10 +294,15 @@ class ProductController extends GetxController {
   /// NOW STRICT: treat input as categoryKey
   List<Product> getProductsByCategory(String categoryKey) {
     final key = categoryKey.trim().toUpperCase();
-    return _products
+    final filtered = _products
         .where((product) =>
             product.categoryKey.trim().toUpperCase() == key)
         .toList();
+    
+    // 🔎 Debug: Trace category filtering
+    debugPrint('🔎 getProductsByCategory("$categoryKey") -> normalized="$key" -> found ${filtered.length} products');
+    
+    return filtered;
   }
 
   List<Product> getWishlistProducts() {

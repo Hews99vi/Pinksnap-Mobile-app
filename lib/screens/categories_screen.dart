@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../utils/responsive.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/category_controller.dart';
+import '../models/product.dart';
 import 'category_products_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -125,11 +126,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
             maxWidth: Responsive.isDesktop(context) ? 1400.0 : double.infinity,
           ),
           child: Obx(() {
-            // Get visible categories from CategoryController
+            // ✅ CRITICAL: Access both reactive sources so Obx rebuilds when either changes
             final visibleCategories = categoryController.visibleShopCategories;
+            final allProducts = productController.productsRx.toList(); // ✅ Access RxList to trigger reactivity
             final categoryStyles = getCategoryStyles();
             
-            debugPrint('Displaying ${visibleCategories.length} visible categories in Shop by Category');
+            debugPrint('🔄 Building categories screen: ${visibleCategories.length} categories, ${allProducts.length} products');
+            
+            // 📊 Debug: Show product distribution by category key
+            final keyDistribution = <String, int>{};
+            for (final product in allProducts) {
+              keyDistribution[product.categoryKey] = (keyDistribution[product.categoryKey] ?? 0) + 1;
+            }
+            final sortedKeys = keyDistribution.keys.toList()..sort();
+            debugPrint('📊 Product distribution: ${sortedKeys.map((k) => '$k=${keyDistribution[k]}').join(', ')}');
             
             if (visibleCategories.isEmpty) {
               return Center(
@@ -164,13 +174,28 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
             }
             
             // Create category data with actual product counts
+            // ✅ Compute counts reactively using the loaded products
             final categories = visibleCategories.map((category) {
               final categoryName = category.name;
-              final productCount = productController.getProductsByCategory(categoryName).length;
+              
+              // ✅ Normalize category key using SAME logic as products (handles HOODIES→HOODIE, etc.)
+              final normalizedKey = Product.normalizeCategoryKey(
+                category.key.trim().isNotEmpty ? category.key : category.name
+              );
+              
+              // ✅ Count products by normalized key (both sides use same normalization)
+              final productCount = allProducts
+                  .where((p) => p.categoryKey == normalizedKey)
+                  .length;
+              
               final style = categoryStyles[categoryName] ?? categoryStyles['default']!;
+              
+              // 🧩 Debug: Verify count calculation with normalization
+              debugPrint('🧩 Tile "$categoryName" -> rawKey="${category.key}" normalized="$normalizedKey" count=$productCount');
               
               return {
                 'name': categoryName,
+                'key': normalizedKey,  // ✅ Store normalized key for navigation
                 'icon': style['icon'],
                 'gradient': style['gradient'],
                 'count': productCount,
@@ -240,8 +265,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> with SingleTickerPr
         ),
         child: InkWell(
           onTap: () {
-            // Navigate to category products screen
-            Get.to(() => CategoryProductsScreen(categoryName: category['name'] as String));
+            final name = category['name'] as String;
+            final key = category['key'] as String;
+            final count = category['count'] as int;
+            
+            // 📦 Debug: Trace navigation parameters
+            debugPrint('📦 Opening category: name="$name", key="$key", expectedCount=$count');
+            
+            // Navigate to category products screen with categoryKey
+            Get.to(() => CategoryProductsScreen(
+              categoryName: name,
+              categoryKey: key,  // ✅ Pass key for filtering
+            ));
           },
           borderRadius: BorderRadius.circular(20),
           child: Container(

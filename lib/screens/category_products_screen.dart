@@ -7,10 +7,12 @@ import 'product_details_screen.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final String categoryName;
+  final String categoryKey;  // ✅ Add categoryKey parameter
   
   const CategoryProductsScreen({
     super.key,
     required this.categoryName,
+    required this.categoryKey,  // ✅ Required for proper filtering
   });
 
   @override
@@ -30,8 +32,18 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Add a delay to ensure the controller is fully initialized
       Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && searchController.availableCategories.contains(widget.categoryName)) {
-          searchController.updateCategory(widget.categoryName);
+        if (mounted) {
+          // ✅ Use categoryKey for filtering (already normalized)
+          debugPrint('📍 Setting category filter: key="${widget.categoryKey}", name="${widget.categoryName}"');
+          searchController.updateCategory(widget.categoryKey);
+          
+          // 🔍 Verify filtered count matches tile count
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted) {
+              final filteredCount = searchController.filteredProducts.length;
+              debugPrint('🔍 Filtered products for "${widget.categoryName}": $filteredCount items');
+            }
+          });
         }
       });
     });
